@@ -6,9 +6,9 @@ data class SignInRequest(
 )
 
 data class SignInResponse(
-    val token: String,
-    val userId: String
+    val access_token: String?
 )
+
 
 data class SignUpRequest(
     val name: String,
@@ -17,6 +17,10 @@ data class SignUpRequest(
 )
 
 data class SignUpResponse(
-    val message: String,
-    val userId: String
+    val name: String,
+    val email: String,
+    val password: String, // Hashed password
+    val _id: String,
+    val preferences: List<String>,
+    val __v: Int
 )

@@ -2,6 +2,7 @@ package tn.esprit.smartspend
 
 import android.content.Context
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -29,6 +30,8 @@ import retrofit2.Callback
 import retrofit2.Response
 import tn.esprit.smartspend.model.SignInRequest
 import tn.esprit.smartspend.model.SignInResponse
+import tn.esprit.smartspend.model.SignUpRequest
+import tn.esprit.smartspend.model.SignUpResponse
 import tn.esprit.smartspend.network.RetrofitInstance
 import tn.esprit.smartspend.ui.theme.SmartSpendTheme
 
@@ -165,18 +168,23 @@ fun LoginScreen(onSignUpClick: () -> Unit) {
                     override fun onResponse(call: Call<SignInResponse>, response: Response<SignInResponse>) {
                         if (response.isSuccessful) {
                             val signInResponse = response.body()
-                            val token = signInResponse?.token
+                            Log.d("Login", "Response body: $signInResponse")  // Log the response
+                            val token = signInResponse?.access_token
 
-                            // Sauvegarder le token dans SharedPreferences
-                            val sharedPreferences = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
-                            sharedPreferences.edit().putString("TOKEN", token).apply()
-
-                            // Rediriger l'utilisateur (Exemple : Naviguer vers un autre écran)
-                            Toast.makeText(context, "Connexion réussie", Toast.LENGTH_SHORT).show()
+                            if (token.isNullOrEmpty()) {
+                                Log.d("Login", "Token is null or empty!")  // Check if the token is empty
+                            } else {
+                                Log.d("Login", "Token received: $token")  // Log the token
+                                // Show the token in a Snackbar or use it as needed
+                                Toast.makeText(context, "Token: $token", Toast.LENGTH_SHORT).show()
+                            }
                         } else {
+                            // Log error if the response is not successful
+                            Log.d("Login", "Response error: ${response.errorBody()?.string()}")
                             Toast.makeText(context, "Erreur de connexion", Toast.LENGTH_SHORT).show()
                         }
                     }
+
 
                     override fun onFailure(call: Call<SignInResponse>, t: Throwable) {
                         Toast.makeText(context, "Échec de la connexion : ${t.message}", Toast.LENGTH_SHORT).show()
@@ -240,6 +248,8 @@ fun SignUpScreen(onSignInClick: () -> Unit) {
     var confirmPassword by remember { mutableStateOf("") }
     val passwordVisible = remember { mutableStateOf(false) }
     val confirmPasswordVisible = remember { mutableStateOf(false) }
+
+    val context = LocalContext.current
 
     Column(
         modifier = Modifier
@@ -357,7 +367,32 @@ fun SignUpScreen(onSignInClick: () -> Unit) {
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(
-            onClick = { /* Action d'inscription */ },
+            onClick = {
+                // Check if passwords match before sending request
+                if (password != confirmPassword) {
+                    Toast.makeText(context, "Passwords do not match", Toast.LENGTH_SHORT).show()
+                    return@Button
+                }
+
+                val signUpRequest = SignUpRequest(name, email, password)
+
+                RetrofitInstance.api.signUp(signUpRequest).enqueue(object : Callback<SignUpResponse> {
+                    override fun onResponse(call: Call<SignUpResponse>, response: Response<SignUpResponse>) {
+                        if (response.isSuccessful) {
+                            Log.d("SignUp", "Account created successfully!")
+                            Toast.makeText(context, "Account created successfully!", Toast.LENGTH_SHORT).show()
+                            onSignInClick()  // Redirect to sign in screen
+                        } else {
+                            Log.d("SignUp", "Error: ${response.errorBody()?.string()}")
+                            Toast.makeText(context, "Erreur d'inscription", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+
+                    override fun onFailure(call: Call<SignUpResponse>, t: Throwable) {
+                        Toast.makeText(context, "Failed to sign up: ${t.message}", Toast.LENGTH_SHORT).show()
+                    }
+                })
+            },
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD54F)),
             modifier = Modifier
                 .fillMaxWidth()
@@ -370,7 +405,7 @@ fun SignUpScreen(onSignInClick: () -> Unit) {
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "Already have an account? Sign In",
+            text = "Already have an account? Sign in",
             color = Color.Blue,
             fontSize = 14.sp,
             modifier = Modifier.clickable { onSignInClick() }
