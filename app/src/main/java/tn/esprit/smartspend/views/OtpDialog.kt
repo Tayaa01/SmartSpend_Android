@@ -1,44 +1,51 @@
 package tn.esprit.smartspend.views
+
+import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
-
+import androidx.compose.ui.unit.sp
 
 @Composable
-fun OtpDialog(onCodeSubmitted: (String) -> Unit, onDismiss: () -> Unit) {
-    var code by remember { mutableStateOf("") }
+fun OtpDialog(onTokenSubmitted: (String) -> Unit, onDismiss: () -> Unit) {
+    var token by remember { mutableStateOf("") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        title = { Text("Enter the Token") },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = token,
+                    onValueChange = { token = it },
+                    label = { Text("Token") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
         confirmButton = {
-            Button(onClick = { onCodeSubmitted(code) }) {
-                Text(text = "Submit")
+            Button(
+                onClick = {
+                    if (token.isNotEmpty()) {
+                        onTokenSubmitted(token) // Pass the token back to ForgotPasswordScreen
+                    }
+                }
+            ) {
+                Text("Submit")
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(text = "Cancel")
-            }
-        },
-        title = { Text("Enter the Code") },
-        text = {
-            Column {
-                Text(text = "Please enter the 6-digit code sent to your email.")
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = code,
-                    onValueChange = { code = it },
-                    label = { Text("Code") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth()
-                )
+            Button(onClick = onDismiss) {
+                Text("Cancel")
             }
         }
     )
 }
-
 

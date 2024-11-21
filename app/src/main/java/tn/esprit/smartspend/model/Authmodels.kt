@@ -24,3 +24,16 @@ data class SignUpResponse(
     val preferences: List<String>,
     val __v: Int
 )
+data class ForgotPasswordRequest(
+    val email: String
+)
+data class ForgotPasswordResponse(
+    val message: String
+)
+data class ResetPasswordRequest(
+    val newPassword: String // Only new password in the body
+)
+
+data class ResetPasswordResponse(
+    val message: String
+)
