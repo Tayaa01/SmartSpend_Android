@@ -2,9 +2,11 @@ package tn.esprit.smartspend.network
 
 import retrofit2.Call
 import retrofit2.http.Body
+import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
 import retrofit2.http.Query
+import tn.esprit.smartspend.model.Expense
 import tn.esprit.smartspend.model.ForgotPasswordRequest
 import tn.esprit.smartspend.model.ForgotPasswordResponse
 import tn.esprit.smartspend.model.ResetPasswordRequest
@@ -31,4 +33,7 @@ interface ApiService {
 
     @POST("auth/forgot-password")
     fun forgotPassword(@Body request: ForgotPasswordRequest): Call<ForgotPasswordResponse>
+
+    @GET("expense")
+    fun getExpenses(@Query("token") token: String): Call<List<Expense>>
 }

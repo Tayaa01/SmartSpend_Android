@@ -28,19 +28,21 @@ import retrofit2.Response
 import tn.esprit.smartspend.model.SignInRequest
 import tn.esprit.smartspend.model.SignInResponse
 import tn.esprit.smartspend.network.RetrofitInstance
+import tn.esprit.smartspend.utils.SharedPrefsManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoginScreen(onSignUpClick: () -> Unit,onForgotPasswordClick: () -> Unit) {
+fun LoginScreen(onSignUpClick: () -> Unit, onForgotPasswordClick: () -> Unit) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     val passwordVisible = remember { mutableStateOf(false) }
 
     val context = LocalContext.current
+    val sharedPrefsManager = SharedPrefsManager(context)  // Initialize SharedPrefsManager
 
-    // Couleurs personnalisées
-    val backgroundColor = Color(0xFFF3E5F5) // Mauve très clair
-    val primaryColor = Color(0xFF9575CD) // Mauve plus soutenu
+    // Colors for UI
+    val backgroundColor = Color(0xFFF3E5F5) // Light purple
+    val primaryColor = Color(0xFF9575CD) // Darker purple
     val textColor = Color(0xFF6A6A6A)
     val borderColor = Color(0xFFB39DDB)
 
@@ -68,7 +70,7 @@ fun LoginScreen(onSignUpClick: () -> Unit,onForgotPasswordClick: () -> Unit) {
                     .padding(bottom = 16.dp)
             )
 
-            // Carte pour les champs de connexion
+            // Login card
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -153,21 +155,19 @@ fun LoginScreen(onSignUpClick: () -> Unit,onForgotPasswordClick: () -> Unit) {
 
                     Text(
                         text = "Forgot password?",
-                        color = primaryColor, // Assurez-vous que `primaryColor` est défini dans votre thème ou en tant que variable.
+                        color = primaryColor,
                         fontSize = 14.sp,
                         modifier = Modifier
                             .align(Alignment.End)
-                            .clickable { onForgotPasswordClick() }, // Utilisation d'un callback pour gérer la navigation
+                            .clickable { onForgotPasswordClick() },
                         style = TextStyle(textDecoration = TextDecoration.Underline)
                     )
-
-
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Bouton de connexion avec un design amélioré
+            // Sign-in button
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -175,11 +175,11 @@ fun LoginScreen(onSignUpClick: () -> Unit,onForgotPasswordClick: () -> Unit) {
                     .background(
                         brush = Brush.horizontalGradient(
                             colors = listOf(
-                                Color(0xFF7E57C2), // Couleur mauve
-                                Color(0xFF9575CD)  // Couleur un peu plus claire
+                                Color(0xFF7E57C2),
+                                Color(0xFF9575CD)
                             )
                         ),
-                        shape = RoundedCornerShape(25.dp) // Coins arrondis
+                        shape = RoundedCornerShape(25.dp)
                     )
                     .clickable(
                         onClick = {
@@ -194,6 +194,9 @@ fun LoginScreen(onSignUpClick: () -> Unit,onForgotPasswordClick: () -> Unit) {
                                         if (token.isNullOrEmpty()) {
                                             Toast.makeText(context, "Token is null or empty", Toast.LENGTH_SHORT).show()
                                         } else {
+                                            // Save the token in SharedPreferences
+                                            sharedPrefsManager.saveToken(token)
+
                                             Toast.makeText(context, "Welcome!", Toast.LENGTH_SHORT).show()
 
                                             // Navigate to HomeActivity
@@ -225,36 +228,6 @@ fun LoginScreen(onSignUpClick: () -> Unit,onForgotPasswordClick: () -> Unit) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Options sociales
-            Text(
-                text = "Or sign in with",
-                color = textColor,
-                fontSize = 14.sp
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                IconButton(onClick = { /* Action Google */ }) {
-                    Image(
-                        painter = painterResource(id = R.drawable.google_removebg_preview),
-                        contentDescription = "Google Sign-In"
-                    )
-                }
-                IconButton(onClick = { /* Action Facebook */ }) {
-                    Image(
-                        painter = painterResource(id = R.drawable.facebook_removebg_preview),
-                        contentDescription = "Facebook Sign-In"
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Texte de création de compte
             Text(
                 text = "Don't have an account? Sign up",
                 color = primaryColor,
