@@ -70,6 +70,12 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview:1.5.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.0")
     implementation("androidx.activity:activity-compose:1.7.0")
+    implementation(libs.androidx.appcompat)
+    implementation(libs.material)
+    implementation(libs.androidx.activity)
+    implementation(libs.androidx.constraintlayout)
+    implementation(libs.androidx.navigation.runtime.ktx)
+    implementation(libs.androidx.navigation.compose)
 
     // Test dependencies
     testImplementation(libs.junit)

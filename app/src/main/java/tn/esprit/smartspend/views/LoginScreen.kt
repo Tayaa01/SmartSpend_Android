@@ -194,7 +194,12 @@ fun LoginScreen(onSignUpClick: () -> Unit,onForgotPasswordClick: () -> Unit) {
                                         if (token.isNullOrEmpty()) {
                                             Toast.makeText(context, "Token is null or empty", Toast.LENGTH_SHORT).show()
                                         } else {
-                                            Toast.makeText(context, "Token: $token", Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(context, "Welcome!", Toast.LENGTH_SHORT).show()
+
+                                            // Navigate to HomeActivity
+                                            val intent = android.content.Intent(context, HomeActivity::class.java)
+                                            intent.flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                            context.startActivity(intent)
                                         }
                                     } else {
                                         Toast.makeText(context, "Erreur de connexion", Toast.LENGTH_SHORT).show()
