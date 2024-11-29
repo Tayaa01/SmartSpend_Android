@@ -42,6 +42,5 @@ data class Expense(
     val amount: Double, // Expense amount
     val description: String, // Description of the expense
     val date: String, // Date of the expense
-    val category: String, // Category ID of the expense
     val user: String // User ID associated with the expense
 )
