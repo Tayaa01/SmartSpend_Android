@@ -1,6 +1,8 @@
 package tn.esprit.smartspend
 
+import android.content.Context
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.padding
@@ -20,6 +22,7 @@ import androidx.navigation.compose.rememberNavController
 import com.google.gson.Gson
 import tn.esprit.smartspend.model.Expense
 import tn.esprit.smartspend.ui.theme.SmartSpendTheme
+import tn.esprit.smartspend.utils.SharedPrefsManager
 import tn.esprit.smartspend.views.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -28,22 +31,28 @@ class HomeActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             SmartSpendTheme {
-                MainScreen()
+                // Pass context to MainScreen to retrieve token from SharedPrefs
+                MainScreen(context = this@HomeActivity)
             }
         }
     }
 }
 
 @Composable
-fun MainScreen() {
+fun MainScreen(context: Context) {
     val navController = rememberNavController()
+
+    // Initialize SharedPrefsManager and get the token
+    val sharedPrefsManager = SharedPrefsManager(context)
+    val token: String? = sharedPrefsManager.getToken()
 
     Scaffold(
         bottomBar = { BottomNavigationBar(navController) }
     ) { innerPadding ->
         NavigationGraph(
             navController = navController,
-            modifier = Modifier.padding(innerPadding)
+            modifier = Modifier.padding(innerPadding),
+            token = token // Pass token here
         )
     }
 }
@@ -82,11 +91,20 @@ fun BottomNavigationBar(navController: NavHostController) {
 }
 
 @Composable
-fun NavigationGraph(navController: NavHostController, modifier: Modifier = Modifier) {
+fun NavigationGraph(
+    navController: NavHostController,
+    modifier: Modifier = Modifier,
+    token: String? // Add token parameter here
+) {
     NavHost(navController, startDestination = BottomNavItem.Home.route, modifier = modifier) {
         composable(BottomNavItem.Home.route) {
             HomeScreen(
-                onAddItemClick = { /* Handle Add Expense */ },
+                onAddItemClick = {
+                    // Navigate to AddTransactionScreen and pass token
+                    if (token != null) {
+                        navController.navigate("addTransaction/$token")
+                    }
+                },
                 onViewAllExpensesClick = { expenses ->
                     val expensesJson = Gson().toJson(expenses)
                     navController.navigate("expensesView/$expensesJson")
@@ -102,9 +120,25 @@ fun NavigationGraph(navController: NavHostController, modifier: Modifier = Modif
             val expenses = Gson().fromJson(expensesJson, Array<Expense>::class.java).toList()
             ExpensesView(expenses)
         }
+
+        // Add the route for the AddTransactionScreen with token
+        composable("addTransaction/{token}") { backStackEntry ->
+            val token = backStackEntry.arguments?.getString("token")
+            if (token != null) {
+                AddTransactionScreen(
+                    onSaveTransaction = { expense ->
+                        // Handle saving the transaction (you can call a view model or network call here)
+                        Log.d("AddTransaction", "Expense saved: $expense")
+                    },
+                    token = token // Pass the token to AddTransactionScreen
+                )
+            } else {
+                // Handle missing token case (e.g., navigate to login screen)
+                Log.d("AddTransaction", "Token is missing")
+            }
+        }
     }
 }
-
 
 data class BottomNavItem(val route: String, val icon: androidx.compose.ui.graphics.vector.ImageVector, val title: String) {
     companion object {

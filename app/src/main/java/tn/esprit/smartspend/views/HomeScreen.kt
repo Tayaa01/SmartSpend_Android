@@ -99,7 +99,7 @@ fun HomeScreen(onAddItemClick: () -> Unit, onViewAllExpensesClick: (List<Expense
         contentAlignment = Alignment.BottomEnd
     ) {
         FloatingActionButton(
-            onClick = onAddItemClick,
+            onClick = onAddItemClick,  // This will now trigger navigation to AddTransactionScreen
             modifier = Modifier
                 .padding(16.dp)
                 .size(56.dp),
@@ -107,6 +107,7 @@ fun HomeScreen(onAddItemClick: () -> Unit, onViewAllExpensesClick: (List<Expense
         ) {
             Icon(imageVector = Icons.Default.Add, contentDescription = "Add", tint = white)
         }
+
     }
 }
 

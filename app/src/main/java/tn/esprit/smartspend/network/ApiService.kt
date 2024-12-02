@@ -1,11 +1,13 @@
 package tn.esprit.smartspend.network
 
 import retrofit2.Call
+import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
 import retrofit2.http.Query
+import tn.esprit.smartspend.model.Category
 import tn.esprit.smartspend.model.Expense
 import tn.esprit.smartspend.model.ForgotPasswordRequest
 import tn.esprit.smartspend.model.ForgotPasswordResponse
@@ -36,4 +38,14 @@ interface ApiService {
 
     @GET("expense")
     fun getExpenses(@Query("token") token: String): Call<List<Expense>>
+
+    @GET("categories")
+    fun getCategories(): Call<List<Category>>
+
+    @POST("expense")
+    fun addExpense(
+        @Query("token") token: String,
+        @Body expense: Expense
+    ): Call<Expense>  // Note: Return type should be Call<Expense>
+
 }
