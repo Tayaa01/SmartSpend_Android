@@ -213,7 +213,7 @@ fun CategoryDropdownItem(category: Category, onSelectCategory: (Category) -> Uni
 
 fun getCurrentDate(): String {
     val currentDate = Calendar.getInstance().time
-    val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+    val formatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm", Locale.getDefault())
     return formatter.format(currentDate)
 }
 
