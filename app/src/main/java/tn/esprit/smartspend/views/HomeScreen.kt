@@ -17,6 +17,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import tn.esprit.smartspend.model.Expense
@@ -24,14 +25,22 @@ import tn.esprit.smartspend.network.RetrofitInstance
 import tn.esprit.smartspend.utils.SharedPrefsManager
 
 @Composable
-fun HomeScreen(onAddItemClick: () -> Unit, onViewAllExpensesClick: (List<Expense>) -> Unit) {
+fun HomeScreen(
+    onAddItemClick: () -> Unit,
+    onViewAllExpensesClick: (List<Expense>) -> Unit,
+    navController: NavHostController
+) {
     val sharedPrefsManager = SharedPrefsManager(LocalContext.current)
     val token = sharedPrefsManager.getToken() ?: return
     var expenses by remember { mutableStateOf<List<Expense>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
 
     // Fetch expenses when the token is available
     LaunchedEffect(token) {
-        fetchExpenses(token)?.let { expenses = it }
+        fetchExpenses(token) { fetchedExpenses ->
+            expenses = fetchedExpenses
+            isLoading = false
+        }
     }
 
     val purple = Color(0xFF9575CD)
@@ -91,6 +100,17 @@ fun HomeScreen(onAddItemClick: () -> Unit, onViewAllExpensesClick: (List<Expense
                 onViewAllClick = { onViewAllExpensesClick(expenses) }
             )
         }
+
+        // Loading indicator
+        if (isLoading) {
+            item {
+                CircularProgressIndicator(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                )
+            }
+        }
     }
 
     // Floating Action Button for Adding Expense
@@ -107,7 +127,6 @@ fun HomeScreen(onAddItemClick: () -> Unit, onViewAllExpensesClick: (List<Expense
         ) {
             Icon(imageVector = Icons.Default.Add, contentDescription = "Add", tint = white)
         }
-
     }
 }
 
@@ -139,14 +158,21 @@ fun SectionWithItems(title: String, items: List<String>, onViewAllClick: () -> U
     }
 }
 
-suspend fun fetchExpenses(token: String): List<Expense>? {
-    return try {
+suspend fun fetchExpenses(token: String, onResult: (List<Expense>) -> Unit) {
+    try {
         val response = withContext(Dispatchers.IO) {
             RetrofitInstance.api.getExpenses(token).execute()
         }
-        if (response.isSuccessful) response.body() else null
+        if (response.isSuccessful) {
+            response.body()?.let { expenses ->
+                onResult(expenses)
+            }
+        } else {
+            Log.e("HomeScreen", "Error fetching expenses: ${response.message()}")
+            onResult(emptyList()) // Returning empty list in case of error
+        }
     } catch (e: Exception) {
         Log.e("HomeScreen", "Error: ${e.message}", e)
-        null
+        onResult(emptyList()) // Returning empty list in case of exception
     }
 }

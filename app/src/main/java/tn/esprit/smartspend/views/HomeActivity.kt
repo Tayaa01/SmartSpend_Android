@@ -50,7 +50,7 @@ fun MainScreen(context: Context) {
         bottomBar = { BottomNavigationBar(navController) }
     ) { innerPadding ->
         NavigationGraph(
-            navController = navController,
+            navController = navController, // Pass navController to NavigationGraph
             modifier = Modifier.padding(innerPadding),
             token = token // Pass token here
         )
@@ -99,6 +99,7 @@ fun NavigationGraph(
     NavHost(navController, startDestination = BottomNavItem.Home.route, modifier = modifier) {
         composable(BottomNavItem.Home.route) {
             HomeScreen(
+                navController = navController, // Pass navController to HomeScreen
                 onAddItemClick = {
                     // Navigate to AddTransactionScreen and pass token
                     if (token != null) {
@@ -130,8 +131,10 @@ fun NavigationGraph(
                         // Handle saving the transaction (you can call a view model or network call here)
                         Log.d("AddTransaction", "Expense saved: $expense")
                     },
-                    token = token // Pass the token to AddTransactionScreen
+                    token = token, // Pass the token to AddTransactionScreen
+                    navController = navController // Pass the navController
                 )
+
             } else {
                 // Handle missing token case (e.g., navigate to login screen)
                 Log.d("AddTransaction", "Token is missing")
