@@ -49,3 +49,7 @@ data class Category(
     val name: String,
     val type: String
 )
+data class Recommendation(
+    val recommendationText: String
+)
+
