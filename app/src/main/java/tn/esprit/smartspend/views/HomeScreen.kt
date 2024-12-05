@@ -33,13 +33,21 @@ fun HomeScreen(
     val sharedPrefsManager = SharedPrefsManager(LocalContext.current)
     val token = sharedPrefsManager.getToken() ?: return
     var expenses by remember { mutableStateOf<List<Expense>>(emptyList()) }
+    var totalExpenses by remember { mutableStateOf(0.0) }
+    var totalIncome by remember { mutableStateOf(0.0) }
     var isLoading by remember { mutableStateOf(true) }
 
-    // Fetch expenses when the token is available
+    // Fetch expenses, total expenses, and total income when the token is available
     LaunchedEffect(token) {
         fetchExpenses(token) { fetchedExpenses ->
             expenses = fetchedExpenses
             isLoading = false
+        }
+        fetchTotalExpenses(token) { total ->
+            totalExpenses = total
+        }
+        fetchTotalIncome(token) { income ->
+            totalIncome = income
         }
     }
 
@@ -70,7 +78,7 @@ fun HomeScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "Balance: $1850",
+                        text = "Balance: $${String.format("%.2f", totalIncome - totalExpenses)}",
                         color = white,
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold
@@ -81,11 +89,21 @@ fun HomeScreen(
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(text = "Expenses", color = white, fontSize = 16.sp)
-                            Text(text = "$150", color = white, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                            Text(
+                                text = "$${String.format("%.2f", totalExpenses)}",
+                                color = white,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 18.sp
+                            )
                         }
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(text = "Income", color = white, fontSize = 16.sp)
-                            Text(text = "$2000", color = white, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                            Text(
+                                text = "$${String.format("%.2f", totalIncome)}",
+                                color = white,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 18.sp
+                            )
                         }
                     }
                 }
@@ -96,7 +114,7 @@ fun HomeScreen(
         item {
             SectionWithItems(
                 title = "Recent Expenses",
-                items = expenses.take(3).map { "${it.description}: ${it.amount}" },
+                items = expenses.take(3).map { "${it.description}: $${it.amount}" },
                 onViewAllClick = { onViewAllExpensesClick(expenses) }
             )
         }
@@ -174,5 +192,43 @@ suspend fun fetchExpenses(token: String, onResult: (List<Expense>) -> Unit) {
     } catch (e: Exception) {
         Log.e("HomeScreen", "Error: ${e.message}", e)
         onResult(emptyList()) // Returning empty list in case of exception
+    }
+}
+
+suspend fun fetchTotalExpenses(token: String, onResult: (Double) -> Unit) {
+    try {
+        val response = withContext(Dispatchers.IO) {
+            RetrofitInstance.api.getTotalExpenses(token).execute()
+        }
+        if (response.isSuccessful) {
+            response.body()?.let { result ->
+                onResult(result["total"] ?: 0.0) // Assuming the API returns a map with "total" key
+            }
+        } else {
+            Log.e("HomeScreen", "Error fetching total expenses: ${response.message()}")
+            onResult(0.0) // Default to 0.0 in case of error
+        }
+    } catch (e: Exception) {
+        Log.e("HomeScreen", "Error: ${e.message}", e)
+        onResult(0.0) // Default to 0.0 in case of exception
+    }
+}
+
+suspend fun fetchTotalIncome(token: String, onResult: (Double) -> Unit) {
+    try {
+        val response = withContext(Dispatchers.IO) {
+            RetrofitInstance.api.getTotalIncome(token).execute()
+        }
+        if (response.isSuccessful) {
+            response.body()?.let { result ->
+                onResult(result["total"] ?: 0.0) // Assuming the API returns a map with "total" key
+            }
+        } else {
+            Log.e("HomeScreen", "Error fetching total income: ${response.message()}")
+            onResult(0.0) // Default to 0.0 in case of error
+        }
+    } catch (e: Exception) {
+        Log.e("HomeScreen", "Error: ${e.message}", e)
+        onResult(0.0) // Default to 0.0 in case of exception
     }
 }
