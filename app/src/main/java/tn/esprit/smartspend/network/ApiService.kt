@@ -1,23 +1,11 @@
 package tn.esprit.smartspend.network
 
 import retrofit2.Call
-import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
-import retrofit2.http.Header
 import retrofit2.http.POST
 import retrofit2.http.Query
-import tn.esprit.smartspend.model.Category
-import tn.esprit.smartspend.model.Expense
-import tn.esprit.smartspend.model.ForgotPasswordRequest
-import tn.esprit.smartspend.model.ForgotPasswordResponse
-import tn.esprit.smartspend.model.Recommendation
-import tn.esprit.smartspend.model.ResetPasswordRequest
-import tn.esprit.smartspend.model.ResetPasswordResponse
-import tn.esprit.smartspend.model.SignInRequest
-import tn.esprit.smartspend.model.SignInResponse
-import tn.esprit.smartspend.model.SignUpRequest
-import tn.esprit.smartspend.model.SignUpResponse
+import tn.esprit.smartspend.model.*
 
 interface ApiService {
 
@@ -28,6 +16,7 @@ interface ApiService {
     // Méthode pour l'inscription (sign-up)
     @POST("/users")
     fun signUp(@Body signUpRequest: SignUpRequest): Call<SignUpResponse>
+
     @POST("auth/reset-password")
     fun resetPassword(
         @Query("token") token: String, // Token sent as query parameter
@@ -48,9 +37,18 @@ interface ApiService {
         @Query("token") token: String,
         @Body expense: Expense
     ): Call<Expense>  // Note: Return type should be Call<Expense>
+
     @GET("recommendations/generate")
     suspend fun getRecommendation(
         @Query("userToken") userToken: String,  // Paramètre pour le token
         @Query("period") period: String         // Paramètre pour la période
     ): Recommendation
+
+    // New method to fetch total expenses
+    @GET("expense/total")
+    fun getTotalExpenses(@Query("token") token: String): Call<Map<String, Double>>
+
+    @GET("income/total")
+    fun getTotalIncome(@Query("token") token: String): Call<Map<String, Double>>
+
 }
