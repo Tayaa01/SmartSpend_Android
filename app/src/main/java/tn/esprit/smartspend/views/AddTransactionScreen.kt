@@ -244,13 +244,13 @@ fun CategoryDropdownItem(category: Category, onSelectCategory: (Category) -> Uni
         verticalAlignment = Alignment.CenterVertically
     ) {
         val iconResourceId = when (category.name) {
-            "Groceries" -> R.drawable.vegetable // Replace with your actual drawable resource name
-            "Entertainment" -> R.drawable.game_controller
-            "Healthcare" -> R.drawable.healthcare
-            "Housing" -> R.drawable.home
-            "Transportation" -> R.drawable.car
-            "Utilities" -> R.drawable.other
-            "Salary" -> R.drawable.dollar
+            "Groceries" -> R.drawable.groceries_4715353
+            "Entertainment" -> R.drawable.movie_tickets_7452230
+            "Healthcare" -> R.drawable.health_insurance_15341103
+            "Housing" -> R.drawable.house_1352981
+            "Transportation" -> R.drawable.car_1680067
+            "Utilities" -> R.drawable.maintenance_16587880
+            "Salary" -> R.drawable.cash_11761323
             else -> R.drawable.other // A default icon for unspecified categories
         }
 
