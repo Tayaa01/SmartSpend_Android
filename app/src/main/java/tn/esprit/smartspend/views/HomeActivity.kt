@@ -22,6 +22,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.google.gson.Gson
 import tn.esprit.smartspend.model.Expense
+import tn.esprit.smartspend.model.Income
 import tn.esprit.smartspend.ui.theme.SmartSpendTheme
 import tn.esprit.smartspend.utils.SharedPrefsManager
 import tn.esprit.smartspend.views.*
@@ -110,7 +111,12 @@ fun NavigationGraph(
                 onViewAllExpensesClick = { expenses ->
                     val expensesJson = Gson().toJson(expenses)
                     navController.navigate("expensesView/$expensesJson")
+                },
+                onViewAllIncomesClick = { incomes ->
+                    val incomesJson = Gson().toJson(incomes)
+                    navController.navigate("incomesView/$incomesJson")
                 }
+
             )
         }
         composable(BottomNavItem.Timeline.route) { TimelineView() }
@@ -121,6 +127,12 @@ fun NavigationGraph(
             val expensesJson = backStackEntry.arguments?.getString("expensesJson") ?: "[]"
             val expenses = Gson().fromJson(expensesJson, Array<Expense>::class.java).toList()
             ExpensesView(expenses)
+        }
+
+        composable("incomesView/{incomesJson}") { backStackEntry ->
+            val incomesJson = backStackEntry.arguments?.getString("incomesJson") ?: "[]"
+            val incomes = Gson().fromJson(incomesJson, Array<Income>::class.java).toList()
+            IncomesView(incomes)
         }
 
         // Add the route for the AddTransactionScreen with token

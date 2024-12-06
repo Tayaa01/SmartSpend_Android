@@ -28,9 +28,15 @@ interface ApiService {
 
     @GET("expense")
     fun getExpenses(@Query("token") token: String): Call<List<Expense>>
-
+    @GET("income")
+    fun getIncomes(@Query("token") token: String): Call<List<Income>>
     @GET("categories")
     fun getCategories(): Call<List<Category>>
+
+    @GET("categories/expense")
+    fun getExpenseCategories(): Call<List<Category>>
+    @GET("categories/income")
+    fun getIncomeCategories(): Call<List<Category>>
 
     @POST("expense")
     fun addExpense(
@@ -47,6 +53,12 @@ interface ApiService {
     // New method to fetch total expenses
     @GET("expense/total")
     fun getTotalExpenses(@Query("token") token: String): Call<Map<String, Double>>
+
+    @POST("income")
+    fun addIncome(
+        @Query("token") token: String,
+        @Body income: Income
+    ): Call<Income>
 
     @GET("income/total")
     fun getTotalIncome(@Query("token") token: String): Call<Map<String, Double>>

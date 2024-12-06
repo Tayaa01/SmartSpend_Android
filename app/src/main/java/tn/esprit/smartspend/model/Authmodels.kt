@@ -44,6 +44,13 @@ data class Expense(
     val category: String
 )
 
+data class Income(
+    val amount: Double,
+    val description: String,
+    val date: String,
+    val category: String
+)
+
 data class Category(
     val _id: String,
     val name: String,

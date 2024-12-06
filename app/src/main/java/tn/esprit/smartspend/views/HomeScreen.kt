@@ -21,6 +21,7 @@ import androidx.navigation.NavHostController
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import tn.esprit.smartspend.model.Expense
+import tn.esprit.smartspend.model.Income
 import tn.esprit.smartspend.network.RetrofitInstance
 import tn.esprit.smartspend.utils.SharedPrefsManager
 
@@ -28,11 +29,13 @@ import tn.esprit.smartspend.utils.SharedPrefsManager
 fun HomeScreen(
     onAddItemClick: () -> Unit,
     onViewAllExpensesClick: (List<Expense>) -> Unit,
+    onViewAllIncomesClick: (List<Income>) -> Unit,
     navController: NavHostController
 ) {
     val sharedPrefsManager = SharedPrefsManager(LocalContext.current)
     val token = sharedPrefsManager.getToken() ?: return
     var expenses by remember { mutableStateOf<List<Expense>>(emptyList()) }
+    var incomes by remember { mutableStateOf<List<Income>>(emptyList()) }
     var totalExpenses by remember { mutableStateOf(0.0) }
     var totalIncome by remember { mutableStateOf(0.0) }
     var isLoading by remember { mutableStateOf(true) }
@@ -41,6 +44,10 @@ fun HomeScreen(
     LaunchedEffect(token) {
         fetchExpenses(token) { fetchedExpenses ->
             expenses = fetchedExpenses
+            isLoading = false
+        }
+        fetchIncomes(token) { fetchIncomes ->
+            incomes = fetchIncomes
             isLoading = false
         }
         fetchTotalExpenses(token) { total ->
@@ -118,7 +125,13 @@ fun HomeScreen(
                 onViewAllClick = { onViewAllExpensesClick(expenses) }
             )
         }
-
+        item {
+            SectionWithItems(
+                title = "Recent Incomes",
+                items = incomes.take(3).map { "${it.description}: $${it.amount}" },
+                onViewAllClick = { onViewAllIncomesClick(incomes) }
+            )
+        }
         // Loading indicator
         if (isLoading) {
             item {
@@ -187,6 +200,25 @@ suspend fun fetchExpenses(token: String, onResult: (List<Expense>) -> Unit) {
             }
         } else {
             Log.e("HomeScreen", "Error fetching expenses: ${response.message()}")
+            onResult(emptyList()) // Returning empty list in case of error
+        }
+    } catch (e: Exception) {
+        Log.e("HomeScreen", "Error: ${e.message}", e)
+        onResult(emptyList()) // Returning empty list in case of exception
+    }
+}
+
+suspend fun fetchIncomes(token: String, onResult: (List<Income>) -> Unit) {
+    try {
+        val response = withContext(Dispatchers.IO) {
+            RetrofitInstance.api.getIncomes(token).execute()
+        }
+        if (response.isSuccessful) {
+            response.body()?.let { incomes ->
+                onResult(incomes)
+            }
+        } else {
+            Log.e("HomeScreen", "Error fetching incomes: ${response.message()}")
             onResult(emptyList()) // Returning empty list in case of error
         }
     } catch (e: Exception) {

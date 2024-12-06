@@ -1,5 +1,6 @@
 package tn.esprit.smartspend.views
 
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -25,12 +26,13 @@ import tn.esprit.smartspend.network.RetrofitInstance
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import tn.esprit.smartspend.model.Income
 import java.text.SimpleDateFormat
 import java.util.*
 
 @Composable
 fun AddTransactionScreen(
-    onSaveTransaction: (Expense) -> Unit,
+    onSaveTransaction: (Any) -> Unit,
     token: String,
     navController: NavController
 ) {
@@ -45,13 +47,17 @@ fun AddTransactionScreen(
     var isLoading by remember { mutableStateOf(true) }
     var isError by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(isExpense) {
+        Log.d("LaunchedEffect", "Fetching categories for isExpense = $isExpense")
         isLoading = true
-        fetchCategories { fetchedCategories ->
+        fetchCategories(isExpense) { fetchedCategories ->
             categories = fetchedCategories
             isLoading = false
+            Log.d("fetchCategories", "Fetched ${categories.size} categories")
         }
     }
+
+
 
     val isFormValid = description.isNotBlank() && amount.isNotBlank() && category != null
 
@@ -80,8 +86,30 @@ fun AddTransactionScreen(
             } else {
                 isError = true
             }
-        } else {
-            // Do nothing when Income is selected
+        }else if (!isExpense) {
+            if (isFormValid) {
+                val amountValue = amount.toDoubleOrNull()
+                if (amountValue != null) {
+                    val income = Income(
+                        amount = amountValue,
+                        description = description,
+                        date = date,
+                        category = category!!._id
+                    )
+                    addIncome(token, income) { success ->
+                        if (success) {
+                            onSaveTransaction(income)
+                            navController.popBackStack()
+                        } else {
+                            isError = true
+                        }
+                    }
+                } else {
+                    isError = true
+                }
+            } else {
+                isError = true
+            }
         }
     }
 
@@ -157,9 +185,13 @@ fun AddTransactionScreen(
                 readOnly = true,
                 label = { Text("Category") },
                 trailingIcon = {
-                    IconButton(onClick = { showCategoryDropdown = !showCategoryDropdown }) {
+                    IconButton(onClick = {
+                        showCategoryDropdown = !showCategoryDropdown
+                        Log.d("CategoryDropdown", "Dropdown visibility: $showCategoryDropdown")
+                    }) {
                         Icon(imageVector = Icons.Default.ArrowDropDown, contentDescription = null)
                     }
+
                 },
                 modifier = Modifier.fillMaxWidth()
             )
@@ -183,7 +215,7 @@ fun AddTransactionScreen(
             Button(
                 onClick = onSaveClick,
                 modifier = Modifier.fillMaxWidth(),
-                enabled = isExpense && isFormValid,
+                enabled = isFormValid,
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF9575CD))
             ) {
                 Text("Save", color = Color.White)
@@ -230,19 +262,39 @@ fun addExpense(token: String, expense: Expense, onResult: (Boolean) -> Unit) {
         })
 }
 
-fun fetchCategories(onCategoriesFetched: (List<Category>) -> Unit) {
-    RetrofitInstance.api.getCategories()
-        .enqueue(object : Callback<List<Category>> {
-            override fun onResponse(call: Call<List<Category>>, response: Response<List<Category>>) {
-                if (response.isSuccessful) {
-                    response.body()?.let { categories ->
-                        onCategoriesFetched(categories)
-                    }
-                }
+fun addIncome(token: String, income: Income, onResult: (Boolean) -> Unit) {
+    RetrofitInstance.api.addIncome(token, income)
+        .enqueue(object : Callback<Income> {
+            override fun onResponse(call: Call<Income>, response: Response<Income>) {
+                onResult(response.isSuccessful)
             }
 
-            override fun onFailure(call: Call<List<Category>>, t: Throwable) {
-                // Handle failure
+            override fun onFailure(call: Call<Income>, t: Throwable) {
+                onResult(false)
             }
         })
 }
+
+fun fetchCategories(isExpense: Boolean, onCategoriesFetched: (List<Category>) -> Unit) {
+    val call = if (isExpense) {
+        RetrofitInstance.api.getExpenseCategories() // API endpoint for Expense categories
+    } else {
+        RetrofitInstance.api.getIncomeCategories()// API endpoint for Income categories
+    }
+
+    call.enqueue(object : Callback<List<Category>> {
+        override fun onResponse(call: Call<List<Category>>, response: Response<List<Category>>) {
+            if (response.isSuccessful) {
+                response.body()?.let { categories ->
+                    onCategoriesFetched(categories)
+                }
+            }
+        }
+
+        override fun onFailure(call: Call<List<Category>>, t: Throwable) {
+            // Handle failure (e.g., log error or notify user)
+            onCategoriesFetched(emptyList()) // Return an empty list on failure
+        }
+    })
+}
+
