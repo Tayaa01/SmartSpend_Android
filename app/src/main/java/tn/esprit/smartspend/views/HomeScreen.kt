@@ -13,163 +13,186 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import tn.esprit.smartspend.R
+import tn.esprit.smartspend.model.Category
 import tn.esprit.smartspend.model.Expense
 import tn.esprit.smartspend.model.Income
 import tn.esprit.smartspend.network.RetrofitInstance
-import tn.esprit.smartspend.utils.SharedPrefsManager
 
 @Composable
 fun HomeScreen(
-    onAddItemClick: () -> Unit,
+    token: String,
+    navController: NavHostController,
     onViewAllExpensesClick: (List<Expense>) -> Unit,
     onViewAllIncomesClick: (List<Income>) -> Unit,
-    navController: NavHostController
+    onAddItemClick: () -> Unit,
 ) {
-    val sharedPrefsManager = SharedPrefsManager(LocalContext.current)
-    val token = sharedPrefsManager.getToken() ?: return
     var expenses by remember { mutableStateOf<List<Expense>>(emptyList()) }
     var incomes by remember { mutableStateOf<List<Income>>(emptyList()) }
-    var totalExpenses by remember { mutableStateOf(0.0) }
+    var categories by remember { mutableStateOf<List<Category>>(emptyList()) }
     var totalIncome by remember { mutableStateOf(0.0) }
+    var totalExpenses by remember { mutableStateOf(0.0) }
     var isLoading by remember { mutableStateOf(true) }
 
-    // Fetch expenses, total expenses, and total income when the token is available
-    LaunchedEffect(token) {
-        fetchExpenses(token) { fetchedExpenses ->
-            expenses = fetchedExpenses
-            isLoading = false
-        }
-        fetchIncomes(token) { fetchIncomes ->
-            incomes = fetchIncomes
-            isLoading = false
-        }
-        fetchTotalExpenses(token) { total ->
-            totalExpenses = total
-        }
-        fetchTotalIncome(token) { income ->
-            totalIncome = income
+    // Fetch data (expenses, incomes, and categories) on launch
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(Unit) {
+        scope.launch {
+            try {
+                isLoading = true
+                // Fetch categories
+                categories = fetchCategories()
+
+                // Fetch recent transactions
+                val (fetchedExpenses, fetchedIncomes) = fetchRecentTransactions(token)
+                expenses = fetchedExpenses
+                incomes = fetchedIncomes
+
+                // Calculate totals for income and expenses
+                totalIncome = incomes.sumOf { it.amount }
+                totalExpenses = expenses.sumOf { it.amount }
+            } catch (e: Exception) {
+                Log.e("HomeScreen", "Error fetching data: ${e.message}")
+            } finally {
+                isLoading = false
+            }
         }
     }
 
-    val purple = Color(0xFF9575CD)
-    val white = Color.White
+    Box(modifier = Modifier.fillMaxSize()) {
+        if (isLoading) {
+            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+        } else {
+            LazyColumn(modifier = Modifier.padding(16.dp)) {
+                // Balance Card Item
+                item {
+                    BalanceCard(totalIncome, totalExpenses)
+                }
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(white)
-    ) {
-        // Balance Card
-        item {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp)
-                    .padding(16.dp),
-                colors = CardDefaults.cardColors(containerColor = purple),
-                shape = RoundedCornerShape(16.dp),
-                elevation = CardDefaults.cardElevation(8.dp)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.SpaceEvenly,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "Balance: $${String.format("%.2f", totalIncome - totalExpenses)}",
-                        color = white,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold
+                // Recent Expenses Section
+                item {
+                    SectionWithItems(
+                        title = "Recent Expenses",
+                        items = expenses.take(3).map {
+                            val categoryName = resolveCategoryName(it.category, categories)
+                            val icon = resolveCategoryIcon(it.category, categories)
+                            "${it.description}: $${it.amount} ($categoryName)" to icon
+                        },
+                        onViewAllClick = { onViewAllExpensesClick(expenses) }
                     )
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(text = "Expenses", color = white, fontSize = 16.sp)
-                            Text(
-                                text = "$${String.format("%.2f", totalExpenses)}",
-                                color = white,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 18.sp
-                            )
-                        }
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(text = "Income", color = white, fontSize = 16.sp)
-                            Text(
-                                text = "$${String.format("%.2f", totalIncome)}",
-                                color = white,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 18.sp
-                            )
-                        }
-                    }
+                }
+
+                // Recent Incomes Section
+                item {
+                    SectionWithItems(
+                        title = "Recent Incomes",
+                        items = incomes.take(3).map {
+                            val categoryName = resolveCategoryName(it.category, categories)
+                            val icon = resolveCategoryIcon(it.category, categories)
+                            "${it.description}: $${it.amount} ($categoryName)" to icon
+                        },
+                        onViewAllClick = { onViewAllIncomesClick(incomes) }
+                    )
                 }
             }
         }
 
-        // Recent Expenses Section
-        item {
-            SectionWithItems(
-                title = "Recent Expenses",
-                items = expenses.take(3).map { "${it.description}: $${it.amount}" },
-                onViewAllClick = { onViewAllExpensesClick(expenses) }
-            )
-        }
-        item {
-            SectionWithItems(
-                title = "Recent Incomes",
-                items = incomes.take(3).map { "${it.description}: $${it.amount}" },
-                onViewAllClick = { onViewAllIncomesClick(incomes) }
-            )
-        }
-        // Loading indicator
-        if (isLoading) {
-            item {
-                CircularProgressIndicator(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                )
-            }
-        }
-    }
-
-    // Floating Action Button for Adding Expense
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.BottomEnd
-    ) {
-        FloatingActionButton(
-            onClick = onAddItemClick,  // This will now trigger navigation to AddTransactionScreen
-            modifier = Modifier
-                .padding(16.dp)
-                .size(56.dp),
-            containerColor = purple
+        // Floating Action Button for Adding Expense
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.BottomEnd
         ) {
-            Icon(imageVector = Icons.Default.Add, contentDescription = "Add", tint = white)
+            FloatingActionButton(
+                onClick = onAddItemClick,
+                modifier = Modifier
+                    .padding(16.dp)
+                    .size(56.dp),
+                containerColor = Color(0xFF9575CD)
+            ) {
+                Icon(imageVector = Icons.Default.Add, contentDescription = "Add", tint = Color.White)
+            }
         }
     }
 }
 
 @Composable
-fun SectionWithItems(title: String, items: List<String>, onViewAllClick: () -> Unit) {
-    Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+fun BalanceCard(totalIncome: Double, totalExpenses: Double) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(200.dp)
+            .padding(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF9575CD)),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(8.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.SpaceEvenly,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "Balance: $${String.format("%.2f", totalIncome - totalExpenses)}",
+                color = Color.White,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(text = "Expenses", color = Color.White, fontSize = 16.sp)
+                    Text(
+                        text = "$${String.format("%.2f", totalExpenses)}",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp
+                    )
+                }
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(text = "Income", color = Color.White, fontSize = 16.sp)
+                    Text(
+                        text = "$${String.format("%.2f", totalIncome)}",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SectionWithItems(
+    title: String,
+    items: List<Pair<String, Int>>, // Pair of item description and drawable resource ID
+    onViewAllClick: () -> Unit
+) {
+    Column(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = title, color = Color.Black, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Text(
+                text = title,
+                color = Color.Black,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold
+            )
             Text(
                 text = "View All",
                 color = Color(0xFF9575CD),
@@ -177,90 +200,76 @@ fun SectionWithItems(title: String, items: List<String>, onViewAllClick: () -> U
                 modifier = Modifier.clickable { onViewAllClick() }
             )
         }
+
         Spacer(modifier = Modifier.height(8.dp))
-        items.forEach { item ->
-            Text(
-                text = item,
-                color = Color.Gray,
-                fontSize = 16.sp,
-                modifier = Modifier.padding(vertical = 4.dp)
-            )
+
+        items.forEach { (description, iconRes) ->
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    painter = painterResource(id = iconRes),
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp),
+                    tint = Color.Unspecified
+                )
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Text(text = description, fontSize = 16.sp)
+            }
         }
     }
 }
 
-suspend fun fetchExpenses(token: String, onResult: (List<Expense>) -> Unit) {
-    try {
-        val response = withContext(Dispatchers.IO) {
-            RetrofitInstance.api.getExpenses(token).execute()
-        }
-        if (response.isSuccessful) {
-            response.body()?.let { expenses ->
-                onResult(expenses)
-            }
-        } else {
-            Log.e("HomeScreen", "Error fetching expenses: ${response.message()}")
-            onResult(emptyList()) // Returning empty list in case of error
-        }
-    } catch (e: Exception) {
-        Log.e("HomeScreen", "Error: ${e.message}", e)
-        onResult(emptyList()) // Returning empty list in case of exception
+fun resolveCategoryName(categoryId: String, categories: List<Category>): String {
+    return categories.find { it._id == categoryId }?.name ?: "Unknown"
+}
+
+fun resolveCategoryIcon(categoryId: String, categories: List<Category>): Int {
+    val categoryName = resolveCategoryName(categoryId, categories)
+    return when (categoryName) {
+        "Groceries" -> R.drawable.vegetable
+        "Entertainment" -> R.drawable.game_controller
+        "Healthcare" -> R.drawable.healthcare
+        "Housing" -> R.drawable.home
+        "Transportation" -> R.drawable.car
+        "Utilities" -> R.drawable.other
+        "Salary" -> R.drawable.dollar
+        else -> R.drawable.dollar
     }
 }
 
-suspend fun fetchIncomes(token: String, onResult: (List<Income>) -> Unit) {
-    try {
-        val response = withContext(Dispatchers.IO) {
-            RetrofitInstance.api.getIncomes(token).execute()
-        }
-        if (response.isSuccessful) {
-            response.body()?.let { incomes ->
-                onResult(incomes)
+suspend fun fetchCategories(): List<Category> {
+    return withContext(Dispatchers.IO) {
+        try {
+            val response = RetrofitInstance.api.getCategories().execute()
+            if (response.isSuccessful) {
+                response.body() ?: emptyList()
+            } else {
+                emptyList()
             }
-        } else {
-            Log.e("HomeScreen", "Error fetching incomes: ${response.message()}")
-            onResult(emptyList()) // Returning empty list in case of error
+        } catch (e: Exception) {
+            Log.e("HomeScreen", "Error fetching categories: ${e.message}")
+            emptyList()
         }
-    } catch (e: Exception) {
-        Log.e("HomeScreen", "Error: ${e.message}", e)
-        onResult(emptyList()) // Returning empty list in case of exception
     }
 }
 
-suspend fun fetchTotalExpenses(token: String, onResult: (Double) -> Unit) {
-    try {
-        val response = withContext(Dispatchers.IO) {
-            RetrofitInstance.api.getTotalExpenses(token).execute()
-        }
-        if (response.isSuccessful) {
-            response.body()?.let { result ->
-                onResult(result["total"] ?: 0.0) // Assuming the API returns a map with "total" key
-            }
-        } else {
-            Log.e("HomeScreen", "Error fetching total expenses: ${response.message()}")
-            onResult(0.0) // Default to 0.0 in case of error
-        }
-    } catch (e: Exception) {
-        Log.e("HomeScreen", "Error: ${e.message}", e)
-        onResult(0.0) // Default to 0.0 in case of exception
-    }
-}
+suspend fun fetchRecentTransactions(token: String): Pair<List<Expense>, List<Income>> {
+    return withContext(Dispatchers.IO) {
+        try {
+            val incomesResponse = RetrofitInstance.api.getIncomes(token).execute()
+            val expensesResponse = RetrofitInstance.api.getExpenses(token).execute()
 
-suspend fun fetchTotalIncome(token: String, onResult: (Double) -> Unit) {
-    try {
-        val response = withContext(Dispatchers.IO) {
-            RetrofitInstance.api.getTotalIncome(token).execute()
+            val incomes = if (incomesResponse.isSuccessful) incomesResponse.body() ?: emptyList() else emptyList()
+            val expenses = if (expensesResponse.isSuccessful) expensesResponse.body() ?: emptyList() else emptyList()
+
+            Pair(expenses, incomes)
+        } catch (e: Exception) {
+            Log.e("HomeScreen", "Error fetching transactions: ${e.message}")
+            Pair(emptyList(), emptyList())
         }
-        if (response.isSuccessful) {
-            response.body()?.let { result ->
-                onResult(result["total"] ?: 0.0) // Assuming the API returns a map with "total" key
-            }
-        } else {
-            Log.e("HomeScreen", "Error fetching total income: ${response.message()}")
-            onResult(0.0) // Default to 0.0 in case of error
-        }
-    } catch (e: Exception) {
-        Log.e("HomeScreen", "Error: ${e.message}", e)
-        onResult(0.0) // Default to 0.0 in case of exception
     }
 }

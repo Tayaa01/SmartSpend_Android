@@ -101,6 +101,7 @@ fun NavigationGraph(
     NavHost(navController, startDestination = BottomNavItem.Home.route, modifier = modifier) {
         composable(BottomNavItem.Home.route) {
             HomeScreen(
+                token = token ?: "", // Ensure token is passed as a non-null value
                 navController = navController, // Pass navController to HomeScreen
                 onAddItemClick = {
                     // Navigate to AddTransactionScreen and pass token
@@ -116,7 +117,6 @@ fun NavigationGraph(
                     val incomesJson = Gson().toJson(incomes)
                     navController.navigate("incomesView/$incomesJson")
                 }
-
             )
         }
         composable(BottomNavItem.Timeline.route) { TimelineView() }
@@ -147,7 +147,6 @@ fun NavigationGraph(
                     token = token, // Pass the token to AddTransactionScreen
                     navController = navController // Pass the navController
                 )
-
             } else {
                 // Handle missing token case (e.g., navigate to login screen)
                 Log.d("AddTransaction", "Token is missing")
@@ -155,6 +154,7 @@ fun NavigationGraph(
         }
     }
 }
+
 
 data class BottomNavItem(val route: String, val icon: androidx.compose.ui.graphics.vector.ImageVector, val title: String) {
     companion object {

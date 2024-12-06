@@ -15,6 +15,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -26,6 +27,7 @@ import tn.esprit.smartspend.network.RetrofitInstance
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import tn.esprit.smartspend.R
 import tn.esprit.smartspend.model.Income
 import java.text.SimpleDateFormat
 import java.util.*
@@ -234,14 +236,41 @@ fun AddTransactionScreen(
 
 @Composable
 fun CategoryDropdownItem(category: Category, onSelectCategory: (Category) -> Unit) {
-    Text(
-        text = category.name,
+    Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
-            .clickable { onSelectCategory(category) }
-    )
+            .clickable { onSelectCategory(category) },
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        val iconResourceId = when (category.name) {
+            "Groceries" -> R.drawable.vegetable // Replace with your actual drawable resource name
+            "Entertainment" -> R.drawable.game_controller
+            "Healthcare" -> R.drawable.healthcare
+            "Housing" -> R.drawable.home
+            "Transportation" -> R.drawable.car
+            "Utilities" -> R.drawable.other
+            "Salary" -> R.drawable.dollar
+            else -> R.drawable.other // A default icon for unspecified categories
+        }
+
+        Icon(
+            painter = painterResource(id = iconResourceId),
+            contentDescription = category.name,
+            modifier = Modifier.size(24.dp),
+            tint = Color.Unspecified
+        )
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        Text(
+            text = category.name,
+            modifier = Modifier.weight(1f),
+            fontSize = 16.sp
+        )
+    }
 }
+
 
 fun getCurrentDate(): String {
     val currentDate = Calendar.getInstance().time
