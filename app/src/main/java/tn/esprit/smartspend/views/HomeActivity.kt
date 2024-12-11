@@ -13,16 +13,24 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.google.gson.Gson
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import tn.esprit.smartspend.model.Category
 import tn.esprit.smartspend.model.Expense
 import tn.esprit.smartspend.model.Income
+import tn.esprit.smartspend.network.RetrofitInstance
+import tn.esprit.smartspend.ui.theme.Navy
+import tn.esprit.smartspend.ui.theme.Sand
 import tn.esprit.smartspend.ui.theme.SmartSpendTheme
 import tn.esprit.smartspend.utils.SharedPrefsManager
 import tn.esprit.smartspend.views.*
@@ -33,7 +41,6 @@ class HomeActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             SmartSpendTheme {
-                // Pass context to MainScreen to retrieve token from SharedPrefs
                 MainScreen(context = this@HomeActivity)
             }
         }
@@ -44,17 +51,23 @@ class HomeActivity : ComponentActivity() {
 fun MainScreen(context: Context) {
     val navController = rememberNavController()
 
-    // Initialize SharedPrefsManager and get the token
     val sharedPrefsManager = SharedPrefsManager(context)
     val token: String? = sharedPrefsManager.getToken()
+
+    var categories by remember { mutableStateOf<List<Category>>(emptyList()) }
+
+    LaunchedEffect(Unit) {
+        categories = fetchCategories()
+    }
 
     Scaffold(
         bottomBar = { BottomNavigationBar(navController) }
     ) { innerPadding ->
         NavigationGraph(
-            navController = navController, // Pass navController to NavigationGraph
+            navController = navController,
             modifier = Modifier.padding(innerPadding),
-            token = token // Pass token here
+            token = token,
+            categories = categories
         )
     }
 }
@@ -68,17 +81,17 @@ fun BottomNavigationBar(navController: NavHostController) {
         BottomNavItem.Profile
     )
 
-    NavigationBar(containerColor = Color(0xFF9575CD)) {
+    NavigationBar(containerColor = Navy) {
         items.forEach { item ->
             NavigationBarItem(
                 icon = {
                     Icon(
                         imageVector = item.icon,
                         contentDescription = item.title,
-                        tint = Color.White
+                        tint = Sand
                     )
                 },
-                label = { Text(text = item.title, color = Color.White) },
+                label = { Text(text = item.title, color = Sand) },
                 selected = false,
                 onClick = {
                     navController.navigate(item.route) {
@@ -96,15 +109,15 @@ fun BottomNavigationBar(navController: NavHostController) {
 fun NavigationGraph(
     navController: NavHostController,
     modifier: Modifier = Modifier,
-    token: String? // Add token parameter here
+    token: String?,
+    categories: List<Category>
 ) {
     NavHost(navController, startDestination = BottomNavItem.Home.route, modifier = modifier) {
         composable(BottomNavItem.Home.route) {
             HomeScreen(
-                token = token ?: "", // Ensure token is passed as a non-null value
-                navController = navController, // Pass navController to HomeScreen
+                token = token ?: "",
+                navController = navController,
                 onAddItemClick = {
-                    // Navigate to AddTransactionScreen and pass token
                     if (token != null) {
                         navController.navigate("addTransaction/$token")
                     }
@@ -126,7 +139,14 @@ fun NavigationGraph(
         composable("expensesView/{expensesJson}") { backStackEntry ->
             val expensesJson = backStackEntry.arguments?.getString("expensesJson") ?: "[]"
             val expenses = Gson().fromJson(expensesJson, Array<Expense>::class.java).toList()
-            ExpensesView(expenses)
+            ExpensesView(
+                expenses = expenses,
+                categories = categories,
+                onExpenseClick = { expense ->
+                    Log.d("ExpenseClick", "Clicked expense: $expense")
+                    // You can add navigation or other actions here
+                }
+            )
         }
 
         composable("incomesView/{incomesJson}") { backStackEntry ->
@@ -135,26 +155,38 @@ fun NavigationGraph(
             IncomesView(incomes)
         }
 
-        // Add the route for the AddTransactionScreen with token
         composable("addTransaction/{token}") { backStackEntry ->
             val token = backStackEntry.arguments?.getString("token")
             if (token != null) {
                 AddTransactionScreen(
                     onSaveTransaction = { expense ->
-                        // Handle saving the transaction (you can call a view model or network call here)
                         Log.d("AddTransaction", "Expense saved: $expense")
                     },
-                    token = token, // Pass the token to AddTransactionScreen
-                    navController = navController // Pass the navController
+                    token = token,
+                    navController = navController
                 )
             } else {
-                // Handle missing token case (e.g., navigate to login screen)
                 Log.d("AddTransaction", "Token is missing")
             }
         }
     }
 }
 
+suspend fun fetchCategories(): List<Category> {
+    return withContext(Dispatchers.IO) {
+        try {
+            val response = RetrofitInstance.api.getCategories().execute()
+            if (response.isSuccessful) {
+                response.body() ?: emptyList()
+            } else {
+                emptyList()
+            }
+        } catch (e: Exception) {
+            Log.e("HomeScreen", "Error fetching categories: ${e.message}")
+            emptyList()
+        }
+    }
+}
 
 data class BottomNavItem(val route: String, val icon: androidx.compose.ui.graphics.vector.ImageVector, val title: String) {
     companion object {

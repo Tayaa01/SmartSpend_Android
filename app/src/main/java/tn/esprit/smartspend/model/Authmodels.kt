@@ -60,3 +60,11 @@ data class Recommendation(
     val recommendationText: String
 )
 
+data class Item(
+    val description: String,
+    val iconRes: Int,
+    val amount: Double,
+    val date: String
+)
+
+
