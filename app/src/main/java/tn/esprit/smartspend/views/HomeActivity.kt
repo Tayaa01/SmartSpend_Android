@@ -55,9 +55,11 @@ fun MainScreen(context: Context) {
     val token: String? = sharedPrefsManager.getToken()
 
     var categories by remember { mutableStateOf<List<Category>>(emptyList()) }
+    var expenses by remember { mutableStateOf<List<Expense>>(emptyList()) }
 
     LaunchedEffect(Unit) {
         categories = fetchCategories()
+        expenses = fetchExpenses(token)
     }
 
     Scaffold(
@@ -67,7 +69,8 @@ fun MainScreen(context: Context) {
             navController = navController,
             modifier = Modifier.padding(innerPadding),
             token = token,
-            categories = categories
+            categories = categories,
+            expenses = expenses
         )
     }
 }
@@ -110,7 +113,8 @@ fun NavigationGraph(
     navController: NavHostController,
     modifier: Modifier = Modifier,
     token: String?,
-    categories: List<Category>
+    categories: List<Category>,
+    expenses: List<Expense>
 ) {
     NavHost(navController, startDestination = BottomNavItem.Home.route, modifier = modifier) {
         composable(BottomNavItem.Home.route) {
@@ -132,7 +136,9 @@ fun NavigationGraph(
                 }
             )
         }
-        composable(BottomNavItem.Timeline.route) { TimelineView() }
+        composable(BottomNavItem.Timeline.route) {
+            TimelineView()
+        }
         composable(BottomNavItem.Analytics.route) { AnalyticsView() }
         composable(BottomNavItem.Profile.route) { ProfileView() }
 
@@ -190,6 +196,22 @@ suspend fun fetchCategories(): List<Category> {
             }
         } catch (e: Exception) {
             Log.e("HomeScreen", "Error fetching categories: ${e.message}")
+            emptyList()
+        }
+    }
+}
+
+suspend fun fetchExpenses(token: String?): List<Expense> {
+    return withContext(Dispatchers.IO) {
+        try {
+            val response = RetrofitInstance.api.getExpenses(token.toString()).execute()
+            if (response.isSuccessful) {
+                response.body() ?: emptyList()
+            } else {
+                emptyList()
+            }
+        } catch (e: Exception) {
+            Log.e("HomeScreen", "Error fetching expenses: ${e.message}")
             emptyList()
         }
     }
