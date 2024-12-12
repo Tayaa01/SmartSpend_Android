@@ -152,7 +152,14 @@ fun NavigationGraph(
         composable("incomesView/{incomesJson}") { backStackEntry ->
             val incomesJson = backStackEntry.arguments?.getString("incomesJson") ?: "[]"
             val incomes = Gson().fromJson(incomesJson, Array<Income>::class.java).toList()
-            IncomesView(incomes)
+            IncomesView(
+                incomes = incomes,
+                categories = categories,
+                onIncomeClick = { income ->
+                    Log.d("IncomeClick", "Clicked income: $income")
+                    // You can add navigation or other actions here
+                }
+            )
         }
 
         composable("addTransaction/{token}") { backStackEntry ->
