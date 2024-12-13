@@ -29,6 +29,7 @@ import tn.esprit.smartspend.utils.SharedPrefsManager
 import tn.esprit.smartspend.network.RetrofitInstance
 import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Date
 import java.util.Locale
 
 @Composable
@@ -58,8 +59,9 @@ fun TimelineView() {
                     RetrofitInstance.apiService.getExpenses(userToken).execute().body().orEmpty()
                 }
 
-                incomeData = incomes.map { it.date to it.amount }
-                expenseData = expenses.map { it.date to it.amount }
+                // Extract date-only data
+                incomeData = incomes.map { extractDateOnly(it.date) to it.amount }
+                expenseData = expenses.map { extractDateOnly(it.date) to it.amount }
             } catch (e: Exception) {
                 recommendationText = "Failed to fetch data: ${e.localizedMessage}"
             } finally {
@@ -72,7 +74,6 @@ fun TimelineView() {
     val aggregatedIncomeData = aggregateDataByDate(incomeData, lastWeekDates)
     val aggregatedExpenseData = aggregateDataByDate(expenseData, lastWeekDates)
 
-    // Enable scrolling
     val scrollState = rememberScrollState()
 
     Box(
@@ -124,6 +125,7 @@ fun TimelineView() {
         }
     }
 }
+
 
 
 @Composable
@@ -432,5 +434,17 @@ fun IncomeExpenseLineChart(
                 }
             )
         }
+    }
+}
+
+fun extractDateOnly(timestamp: String): String {
+    // Parse and format the timestamp to extract only the date (yyyy-MM-dd)
+    val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+    val outputFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+    return try {
+        val date = inputFormat.parse(timestamp)
+        outputFormat.format(date ?: Date())
+    } catch (e: Exception) {
+        timestamp.substring(0, 10) // Fallback to first 10 characters (yyyy-MM-dd)
     }
 }
