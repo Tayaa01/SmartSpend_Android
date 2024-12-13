@@ -39,6 +39,7 @@ fun LoginScreen(onSignUpClick: () -> Unit, onForgotPasswordClick: () -> Unit) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     val passwordVisible = remember { mutableStateOf(false) }
+    val rememberMe = remember { mutableStateOf(false) }
 
     val context = LocalContext.current
     val sharedPrefsManager = SharedPrefsManager(context)
@@ -156,6 +157,25 @@ fun LoginScreen(onSignUpClick: () -> Unit, onForgotPasswordClick: () -> Unit) {
 
                     Spacer(modifier = Modifier.height(16.dp))
 
+                    // Remember Me Checkbox
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Checkbox(
+                            checked = rememberMe.value,
+                            onCheckedChange = { rememberMe.value = it },
+                            colors = CheckboxDefaults.colors(checkedColor = PrimaryColor)
+                        )
+                        Text(
+                            text = "Remember Me",
+                            color = PrimaryColor,
+                            fontSize = 16.sp
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
                     // Forgot Password Link
                     Text(
                         text = "Forgot password?",
@@ -195,6 +215,9 @@ fun LoginScreen(onSignUpClick: () -> Unit, onForgotPasswordClick: () -> Unit) {
                                         Toast.makeText(context, "Token is null or empty", Toast.LENGTH_SHORT).show()
                                     } else {
                                         sharedPrefsManager.saveToken(token)
+                                        if (rememberMe.value) {
+                                            sharedPrefsManager.saveRememberMe(true)
+                                        }
                                         Toast.makeText(context, "Welcome!", Toast.LENGTH_SHORT).show()
 
                                         val intent = android.content.Intent(context, HomeActivity::class.java)

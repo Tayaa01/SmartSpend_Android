@@ -11,6 +11,7 @@ class SharedPrefsManager(context: Context) {
     fun saveToken(token: String) {
         val editor = sharedPreferences.edit()
         editor.putString("ACCESS_TOKEN", token)
+        editor.putLong("TOKEN_EXPIRATION_TIME", System.currentTimeMillis() + 12 * 60 * 60 * 1000) // 12 hours in milliseconds
         editor.apply()
     }
 
@@ -23,6 +24,25 @@ class SharedPrefsManager(context: Context) {
     fun clearToken() {
         val editor = sharedPreferences.edit()
         editor.remove("ACCESS_TOKEN")
+        editor.remove("TOKEN_EXPIRATION_TIME")
         editor.apply()
+    }
+
+    // Save Remember Me preference
+    fun saveRememberMe(rememberMe: Boolean) {
+        val editor = sharedPreferences.edit()
+        editor.putBoolean("REMEMBER_ME", rememberMe)
+        editor.apply()
+    }
+
+    // Get Remember Me preference
+    fun getRememberMe(): Boolean {
+        return sharedPreferences.getBoolean("REMEMBER_ME", false)
+    }
+
+    // Check if the token is expired
+    fun isTokenExpired(): Boolean {
+        val expirationTime = sharedPreferences.getLong("TOKEN_EXPIRATION_TIME", 0)
+        return System.currentTimeMillis() > expirationTime
     }
 }
