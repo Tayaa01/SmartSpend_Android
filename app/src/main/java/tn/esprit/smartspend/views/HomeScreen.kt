@@ -1,5 +1,6 @@
 package tn.esprit.smartspend.views
 
+import android.graphics.Typeface
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -14,11 +15,16 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Paint
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
@@ -49,6 +55,7 @@ fun HomeScreen(
     var totalIncome by remember { mutableStateOf(0.0) }
     var totalExpenses by remember { mutableStateOf(0.0) }
     var isLoading by remember { mutableStateOf(true) }
+    var isExpanded by remember { mutableStateOf(false) } // Track expanded state
 
     val scope = rememberCoroutineScope()
 
@@ -93,7 +100,14 @@ fun HomeScreen(
                     LazyColumn(modifier = Modifier.padding(top = 330.dp)) {
                         item {
                             // Spending Progress Bar
-                            SpendingProgressBar(totalIncome = totalIncome, totalExpenses = totalExpenses)
+                            SpendingProgressBar(
+                                totalIncome = totalIncome,
+                                totalExpenses = totalExpenses,
+                                expenses = expenses,
+                                categories = categories, // Pass categories here
+                                isExpanded = isExpanded,
+                                onToggleExpand = { isExpanded = !isExpanded }
+                            )
 
                             // Recent Expenses Section
                             SectionWithItems(
@@ -182,7 +196,7 @@ fun BalanceCard(totalIncome: Double, totalExpenses: Double, modifier: Modifier =
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(text = "Expenses", color = DarkOrangeRed3, fontSize = 18.sp)
+                    Text(text = "Expenses", color = DarkOrangeRed3, fontSize = 18.sp, fontWeight = FontWeight.Normal)
                     Text(
                         text = "$${String.format("%.2f", totalExpenses)}",
                         color = DarkOrangeRed3,
@@ -191,7 +205,7 @@ fun BalanceCard(totalIncome: Double, totalExpenses: Double, modifier: Modifier =
                     )
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(text = "Income", color = Teal, fontSize = 18.sp)
+                    Text(text = "Income", color = Teal, fontSize = 18.sp, fontWeight = FontWeight.Normal)
                     Text(
                         text = "$${String.format("%.2f", totalIncome)}",
                         color = Teal,
@@ -297,25 +311,26 @@ fun formatDate(date: String): String {
     }
 }
 
-
-
-
-
-
-
 @Composable
-fun SpendingProgressBar(totalIncome: Double, totalExpenses: Double) {
+fun SpendingProgressBar(
+    totalIncome: Double,
+    totalExpenses: Double,
+    expenses: List<Expense>,
+    categories: List<Category>,
+    isExpanded: Boolean,
+    onToggleExpand: () -> Unit
+) {
     val progress = if (totalIncome > 0) (totalExpenses / totalIncome).toFloat() else 1f
     val cappedProgress = progress.coerceAtMost(1f)
-    val progressColor = if (progress > 1f) listOf(Red.copy(alpha = 0.2f),Red,)
-    else listOf(Teal, MostImportantColor)
+    val mainProgressColor = if (progress > 1f) listOf(Red.copy(alpha = 0.2f), Red) else listOf(Teal, MostImportantColor)
 
-    val gradient = Brush.horizontalGradient(colors = progressColor)
+    val gradient = Brush.horizontalGradient(colors = mainProgressColor)
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 16.dp),
+            .padding(horizontal = 16.dp, vertical = 16.dp)
+            .clickable { onToggleExpand() }, // Toggle expand on click
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // Header with Icon
@@ -379,10 +394,57 @@ fun SpendingProgressBar(totalIncome: Double, totalExpenses: Double) {
                 )
             }
         }
+
+        // Group expenses by category and show additional bars for each category when expanded
+        if (isExpanded) {
+            val expensesByCategory = expenses.groupBy { it.category }
+            expensesByCategory.forEach { (categoryId, categoryExpenses) ->
+                val categoryTotal = categoryExpenses.sumOf { it.amount }
+                val categoryProgress = (categoryTotal / totalExpenses).toFloat()
+                val categoryPercentage = (categoryTotal / totalIncome) * 100
+                val categoryName = resolveCategoryName(categoryId, categories)
+                val categoryColor = getProgressColor(categoryProgress)
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.Start
+                ) {
+                    Text(
+                        text = "$categoryName: ${String.format("%.1f", categoryPercentage)}%",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color.Black
+                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(20.dp)
+                            .clip(RoundedCornerShape(50.dp))
+                            .background(Color.Gray.copy(alpha = 0.2f))
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .fillMaxWidth(categoryProgress)
+                                .clip(RoundedCornerShape(50.dp))
+                                .background(Brush.horizontalGradient(colors = categoryColor))
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 
-
+fun getProgressColor(progress: Float): List<Color> {
+    return when {
+        progress < 0.33f -> listOf(Color(0xFF00FF00), Color(0xFF00FF00).copy(alpha = 0.2f)) // Brighter green
+        progress < 0.66f -> listOf(Color(0xFFFFA500), Color(0xFFFFA500).copy(alpha = 0.2f)) // Brighter orange
+        else -> listOf(Red, Red.copy(alpha = 0.2f))
+    }
+}
 
 fun resolveCategoryName(categoryId: String, categories: List<Category>): String {
     return categories.find { it._id == categoryId }?.name ?: "Unknown"
