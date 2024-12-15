@@ -1,6 +1,17 @@
 package tn.esprit.smartspend.views
 
+import android.Manifest
+import android.content.ContentUris
+import android.content.Context
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Environment
+import android.provider.DocumentsContract
+import android.provider.MediaStore
 import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -15,24 +26,31 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.navigation.NavController
-import tn.esprit.smartspend.model.Category
-import tn.esprit.smartspend.model.Expense
-import tn.esprit.smartspend.network.RetrofitInstance
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.ResponseBody
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import tn.esprit.smartspend.R
+import tn.esprit.smartspend.model.Category
+import tn.esprit.smartspend.model.Expense
 import tn.esprit.smartspend.model.Income
-import tn.esprit.smartspend.ui.theme.*
+import tn.esprit.smartspend.network.RetrofitInstance
+import java.io.File
+import java.io.IOException
 import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Locale
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,6 +70,49 @@ fun AddTransactionScreen(
     var isLoading by remember { mutableStateOf(true) }
     var isError by remember { mutableStateOf(false) }
 
+    var currentPhotoPath = rememberSaveable { mutableStateOf("") }
+
+    val context = LocalContext.current
+
+    val takePictureLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+        if (success) {
+            val file = File(currentPhotoPath.value)
+            uploadPhoto(file, token, navController)
+        }
+    }
+
+    val pickImageLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        uri?.let {
+            val realPath = getRealPathFromURI(context, it)
+            if (realPath != null) {
+                val file = File(realPath)
+                uploadPhoto(file, token, navController)
+            } else {
+                Log.e("AddTransactionScreen", "Failed to get real path from URI")
+            }
+        }
+    }
+
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            dispatchTakePictureIntent(context, takePictureLauncher, currentPhotoPath)
+        } else {
+            // Handle permission denial
+        }
+    }
+
+    val readStoragePermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            pickImageLauncher.launch("image/*")
+        } else {
+            // Handle permission denial
+        }
+    }
+
     LaunchedEffect(isExpense) {
         Log.d("LaunchedEffect", "Fetching categories for isExpense = $isExpense")
         isLoading = true
@@ -69,16 +130,12 @@ fun AddTransactionScreen(
             if (isFormValid) {
                 val amountValue = amount.toDoubleOrNull()
                 if (amountValue != null) {
-                    val expense = Expense(
-                        amount = amountValue,
-                        description = description,
-                        date = date,
-                        category = category!!._id
-                    )
+                    val expense = Expense(amountValue,description, date, category!!._id)
                     addExpense(token, expense) { success ->
                         if (success) {
-                            onSaveTransaction(expense)
-                            navController.popBackStack()
+                            navController.navigate("home") {
+                                popUpTo("home") { inclusive = true }
+                            }
                         } else {
                             isError = true
                         }
@@ -93,16 +150,12 @@ fun AddTransactionScreen(
             if (isFormValid) {
                 val amountValue = amount.toDoubleOrNull()
                 if (amountValue != null) {
-                    val income = Income(
-                        amount = amountValue,
-                        description = description,
-                        date = date,
-                        category = category!!._id
-                    )
+                    val income = Income(amountValue,description, date, category!!._id)
                     addIncome(token, income) { success ->
                         if (success) {
-                            onSaveTransaction(income)
-                            navController.popBackStack()
+                            navController.navigate("home") {
+                                popUpTo("home") { inclusive = true }
+                            }
                         } else {
                             isError = true
                         }
@@ -124,27 +177,12 @@ fun AddTransactionScreen(
             elevation = CardDefaults.cardElevation(8.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    text = "Add Transaction",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF3F51B5),
-                    modifier = Modifier.padding(bottom = 16.dp)
+                TextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("Description") },
+                    modifier = Modifier.fillMaxWidth()
                 )
-
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(text = "Expense", modifier = Modifier.padding(end = 8.dp))
-                    RadioButton(
-                        selected = isExpense,
-                        onClick = { isExpense = true }
-                    )
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Text(text = "Income")
-                    RadioButton(
-                        selected = !isExpense,
-                        onClick = { isExpense = false }
-                    )
-                }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -152,88 +190,158 @@ fun AddTransactionScreen(
                     value = amount,
                     onValueChange = { amount = it },
                     label = { Text("Amount") },
-                    isError = isError,
-                    keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = TextFieldDefaults.textFieldColors(
-                        containerColor = Color.White,
-                        focusedIndicatorColor = Color(0xFF3F51B5),
-                        unfocusedIndicatorColor = Color.Gray
-                    )
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth()
                 )
-                if (isError && amount.isBlank()) {
-                    Text(text = "Amount is required", color = Color.Red, fontSize = 12.sp)
-                }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
                 TextField(
-                    value = description,
-                    onValueChange = { description = it },
-                    label = { Text("Description") },
-                    isError = isError,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = TextFieldDefaults.textFieldColors(
-                        containerColor = Color.White,
-                        focusedIndicatorColor = Color(0xFF3F51B5),
-                        unfocusedIndicatorColor = Color.Gray
-                    )
+                    value = date,
+                    onValueChange = { date = it },
+                    label = { Text("Date") },
+                    modifier = Modifier.fillMaxWidth()
                 )
-                if (isError && description.isBlank()) {
-                    Text(text = "Description is required", color = Color.Red, fontSize = 12.sp)
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(onClick = { showCategoryDropdown = !showCategoryDropdown }) {
+                    Text(category?.name ?: "Select Category")
+                    Icon(Icons.Filled.ArrowDropDown, contentDescription = null)
                 }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(text = "Select Category", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFF3F51B5))
-                TextField(
-                    value = category?.name ?: "",
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Category") },
-                    trailingIcon = {
-                        Icon(Icons.Filled.ArrowDropDown, contentDescription = null, modifier = Modifier.clickable { showCategoryDropdown = !showCategoryDropdown })
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = TextFieldDefaults.textFieldColors(
-                        containerColor = Color.White,
-                        focusedIndicatorColor = Color(0xFF3F51B5),
-                        unfocusedIndicatorColor = Color.Gray
-                    )
-                )
 
                 if (showCategoryDropdown) {
-                    LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                    LazyColumn {
                         items(categories) { categoryItem ->
-                            CategoryDropdownItem(category = categoryItem, onSelectCategory = { selectedCategory ->
-                                category = selectedCategory
+                            CategoryDropdownItem(categoryItem) {
+                                category = it
                                 showCategoryDropdown = false
-                            })
+                            }
                         }
                     }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Button(
-                    onClick = onSaveClick,
-                    shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3F51B5)),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(text = "Save", color = Color.White)
+                Button(onClick = { onSaveClick() }) {
+                    Text("Save Transaction")
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(onClick = { cameraPermissionLauncher.launch(Manifest.permission.CAMERA) }) {
+                    Text("Take Photo")
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(onClick = { readStoragePermissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE) }) {
+                    Text("Upload Photo")
                 }
 
                 if (isError) {
-                    Text(text = "Please fill in all fields correctly", color = Color.Red, modifier = Modifier.padding(top = 8.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text("Error saving transaction", color = Color.Red)
                 }
 
                 if (isLoading) {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 16.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
+                    CircularProgressIndicator()
                 }
             }
         }
     }
+}
+
+fun dispatchTakePictureIntent(context: Context, takePictureLauncher: ActivityResultLauncher<Uri>, currentPhotoPath: MutableState<String>) {
+    val photoFile: File? = try {
+        createImageFile(context, currentPhotoPath)
+    } catch (ex: IOException) {
+        null
+    }
+    photoFile?.also {
+        val photoURI = FileProvider.getUriForFile(
+            context,
+            "tn.esprit.smartspend.fileprovider",
+            it
+        )
+        takePictureLauncher.launch(photoURI)
+    }
+}
+
+@Throws(IOException::class)
+fun createImageFile(context: Context, currentPhotoPath: MutableState<String>): File {
+    val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
+    val storageDir: File = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)!!
+    return File.createTempFile(
+        "JPEG_${timeStamp}_",
+        ".jpg",
+        storageDir
+    ).apply {
+        currentPhotoPath.value = absolutePath
+    }
+}
+
+fun getRealPathFromURI(context: Context, uri: Uri): String? {
+    // Check if the URI is a document URI
+    if (DocumentsContract.isDocumentUri(context, uri)) {
+        if (isExternalStorageDocument(uri)) {
+            val docId = DocumentsContract.getDocumentId(uri)
+            val split = docId.split(":")
+            val type = split[0]
+            if ("primary".equals(type, ignoreCase = true)) {
+                return "${Environment.getExternalStorageDirectory()}/${split[1]}"
+            }
+        } else if (isDownloadsDocument(uri)) {
+            val id = DocumentsContract.getDocumentId(uri)
+            val contentUri = ContentUris.withAppendedId(
+                Uri.parse("content://downloads/public_downloads"), id.toLong()
+            )
+            return getDataColumn(context, contentUri, null, null)
+        } else if (isMediaDocument(uri)) {
+            val docId = DocumentsContract.getDocumentId(uri)
+            val split = docId.split(":")
+            val type = split[0]
+            var contentUri: Uri? = null
+            when (type) {
+                "image" -> contentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+                "video" -> contentUri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+                "audio" -> contentUri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+            }
+            val selection = "_id=?"
+            val selectionArgs = arrayOf(split[1])
+            return getDataColumn(context, contentUri, selection, selectionArgs)
+        }
+    } else if ("content".equals(uri.scheme, ignoreCase = true)) {
+        return getDataColumn(context, uri, null, null)
+    } else if ("file".equals(uri.scheme, ignoreCase = true)) {
+        return uri.path
+    }
+    return null
+}
+
+fun getDataColumn(context: Context, uri: Uri?, selection: String?, selectionArgs: Array<String>?): String? {
+    val column = "_data"
+    val projection = arrayOf(column)
+    context.contentResolver.query(uri!!, projection, selection, selectionArgs, null)?.use { cursor ->
+        if (cursor.moveToFirst()) {
+            val columnIndex = cursor.getColumnIndexOrThrow(column)
+            return cursor.getString(columnIndex)
+        }
+    }
+    return null
+}
+
+fun isExternalStorageDocument(uri: Uri): Boolean {
+    return "com.android.externalstorage.documents" == uri.authority
+}
+
+fun isDownloadsDocument(uri: Uri): Boolean {
+    return "com.android.providers.downloads.documents" == uri.authority
+}
+
+fun isMediaDocument(uri: Uri): Boolean {
+    return "com.android.providers.media.documents" == uri.authority
 }
 
 @Composable
@@ -325,6 +433,28 @@ fun fetchCategories(isExpense: Boolean, onCategoriesFetched: (List<Category>) ->
         override fun onFailure(call: Call<List<Category>>, t: Throwable) {
             // Handle failure (e.g., log error or notify user)
             onCategoriesFetched(emptyList()) // Return an empty list on failure
+        }
+    })
+}
+
+fun uploadPhoto(file: File, token: String, navController: NavController) {
+    val requestFile = file.asRequestBody("image/jpeg".toMediaTypeOrNull())
+    val body = MultipartBody.Part.createFormData("file", file.name, requestFile)
+
+    RetrofitInstance.api.scanBill(token, body).enqueue(object : Callback<ResponseBody> {
+        override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
+            if (response.isSuccessful) {
+                Log.d("uploadPhoto", "Photo uploaded successfully")
+                navController.navigate("home") {
+                    popUpTo("home") { inclusive = true }
+                }
+            } else {
+                Log.e("uploadPhoto", "Failed to upload photo: ${response.errorBody()?.string()}")
+            }
+        }
+
+        override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
+            Log.e("uploadPhoto", "Error uploading photo", t)
         }
     })
 }

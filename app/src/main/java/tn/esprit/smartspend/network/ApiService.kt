@@ -1,9 +1,13 @@
 package tn.esprit.smartspend.network
 
+import okhttp3.MultipartBody
+import okhttp3.ResponseBody
 import retrofit2.Call
 import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.Multipart
 import retrofit2.http.POST
+import retrofit2.http.Part
 import retrofit2.http.Query
 import tn.esprit.smartspend.model.*
 
@@ -63,4 +67,10 @@ interface ApiService {
     @GET("income/total")
     fun getTotalIncome(@Query("token") token: String): Call<Map<String, Double>>
 
+    @Multipart
+    @POST("expense/scan-bill")
+    fun scanBill(
+        @Query("token") token: String,
+        @Part file: MultipartBody.Part
+    ): Call<ResponseBody>
 }
