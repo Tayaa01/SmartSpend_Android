@@ -314,17 +314,26 @@ fun AddTransactionScreen(
 @Composable
 fun UploadInProgressDialog(onDismiss: () -> Unit) {
     AlertDialog(
-        onDismissRequest = { /* Do nothing */ },
-        title = { Text(text = "Upload in Progress") },
+        onDismissRequest = onDismiss,
+        title = {
+            Text(text = "Uploading", style = MaterialTheme.typography.titleMedium)
+        },
         text = {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                CircularProgressIndicator()
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(text = "Please wait...")
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    CircularProgressIndicator()
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(text = "Please wait while the upload completes.")
+                }
             }
         },
         confirmButton = {
-            // No confirm button
+
         }
     )
 }
