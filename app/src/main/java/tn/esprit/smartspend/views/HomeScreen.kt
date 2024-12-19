@@ -400,7 +400,7 @@ fun SpendingProgressBar(
             val expensesByCategory = expenses.groupBy { it.category }
             expensesByCategory.forEach { (categoryId, categoryExpenses) ->
                 val categoryTotal = categoryExpenses.sumOf { it.amount }
-                val categoryProgress = (categoryTotal / totalExpenses).toFloat()
+                val categoryProgress = (categoryTotal / totalIncome).toFloat()
                 val categoryPercentage = (categoryTotal / totalIncome) * 100
                 val categoryName = resolveCategoryName(categoryId, categories)
                 val categoryColor = getProgressColor(categoryProgress)
