@@ -79,24 +79,38 @@ fun AddTransactionScreen(
     var isError by remember { mutableStateOf(false) }
 
     var currentPhotoPath = rememberSaveable { mutableStateOf("") }
+    var showProgressDialog by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
 
     val takePictureLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
         if (success) {
             val file = File(currentPhotoPath.value)
-            uploadPhoto(file, token, navController)
+            showProgressDialog = true
+            uploadPhoto(file, token, navController) {
+                showProgressDialog = false
+                navController.navigate("home") {
+                    popUpTo("home") { inclusive = true }
+                }
+                Toast.makeText(context, "Photo uploaded successfully", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
-    val pickMedia = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickVisualMedia()) { uri ->
+    val pickMedia = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) {
             Log.d("PhotoPicker", "Selected URI: $uri")
             val filePath = getRealPathFromURI(context, uri)
             filePath?.let { path ->
                 val file = File(path)
-                uploadPhoto(file, token, navController)
+                showProgressDialog = true
+                uploadPhoto(file, token, navController) {
+                    showProgressDialog = false
+                    navController.navigate("home") {
+                        popUpTo("home") { inclusive = true }
+                    }
+                    Toast.makeText(context, "Photo uploaded successfully", Toast.LENGTH_SHORT).show()
+                }
             }
         } else {
             Log.d("PhotoPicker", "No media selected")
@@ -140,10 +154,11 @@ fun AddTransactionScreen(
                 val expense = Expense(amount.toDouble(), description, currentDate, category!!._id)
                 addExpense(token, expense) { success ->
                     if (success) {
-                        onSaveTransaction(expense)
                         navController.navigate("home") {
                             popUpTo("home") { inclusive = true }
                         }
+                    } else {
+                        Toast.makeText(context, "Failed to save expense", Toast.LENGTH_SHORT).show()
                     }
                 }
             }
@@ -152,10 +167,11 @@ fun AddTransactionScreen(
                 val income = Income(amount.toDouble(), description, currentDate, category!!._id)
                 addIncome(token, income) { success ->
                     if (success) {
-                        onSaveTransaction(income)
                         navController.navigate("home") {
                             popUpTo("home") { inclusive = true }
                         }
+                    } else {
+                        Toast.makeText(context, "Failed to save income", Toast.LENGTH_SHORT).show()
                     }
                 }
             }
@@ -189,6 +205,7 @@ fun AddTransactionScreen(
                 )
                 Text(text = "Income", modifier = Modifier.padding(start = 8.dp))
             }
+
             OutlinedTextField(
                 value = amount,
                 onValueChange = { amount = it },
@@ -212,7 +229,7 @@ fun AddTransactionScreen(
                     readOnly = true,
                     trailingIcon = {
                         Icon(
-                            imageVector = Icons.Default.ArrowDropDown,
+                            imageVector = Icons.Filled.ArrowDropDown,
                             contentDescription = null,
                             modifier = Modifier.clickable { showCategoryDropdown = true }
                         )
@@ -224,13 +241,20 @@ fun AddTransactionScreen(
                     onDismissRequest = { showCategoryDropdown = false }
                 ) {
                     categories.forEach { categoryItem ->
-                        DropdownMenuItem(
-                            text = { Text(categoryItem.name) },
-                            onClick = {
-                                category = categoryItem
-                                showCategoryDropdown = false
+                        DropdownMenu(
+                            expanded = showCategoryDropdown,
+                            onDismissRequest = { showCategoryDropdown = false }
+                        ) {
+                            categories.forEach { categoryItem ->
+                                DropdownMenuItem(
+                                    text = { Text(categoryItem.name) },
+                                    onClick = {
+                                        category = categoryItem
+                                        showCategoryDropdown = false
+                                    }
+                                )
                             }
-                        )
+                        }
                     }
                 }
             }
@@ -258,7 +282,8 @@ fun AddTransactionScreen(
                         }
                     },
                     shape = RoundedCornerShape(5.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor)
+                    colors = ButtonDefaults.buttonColors(containerColor = SecondaryColor),
+                    modifier = Modifier.weight(1f).padding(end = 8.dp)
                 ) {
                     Text(text = "Take Photo", color = Color.White)
                 }
@@ -272,31 +297,49 @@ fun AddTransactionScreen(
                         }
                     },
                     shape = RoundedCornerShape(5.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor)
+                    colors = ButtonDefaults.buttonColors(containerColor = SecondaryColor),
+                    modifier = Modifier.weight(1f).padding(start = 8.dp)
                 ) {
                     Text(text = "Upload Photo", color = Color.White)
                 }
             }
         }
     }
+
+    if (showProgressDialog) {
+        UploadInProgressDialog(onDismiss = { showProgressDialog = false })
+    }
 }
 
-// Upload photo function
-fun uploadPhoto(file: File, token: String, navController: NavController) {
+@Composable
+fun UploadInProgressDialog(onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = { /* Do nothing */ },
+        title = { Text(text = "Upload in Progress") },
+        text = {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                CircularProgressIndicator()
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(text = "Please wait...")
+            }
+        },
+        confirmButton = {
+            // No confirm button
+        }
+    )
+}
+
+fun uploadPhoto(file: File, token: String, navController: NavController, onUploadComplete: () -> Unit) {
     val requestFile = file.asRequestBody("image/jpeg".toMediaTypeOrNull())
     val body = MultipartBody.Part.createFormData("file", file.name, requestFile)
 
     RetrofitInstance.api.scanBill(token, body).enqueue(object : Callback<ResponseBody> {
         override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
-            if (response.isSuccessful) {
-                Toast.makeText(navController.context, "Photo uploaded successfully", Toast.LENGTH_SHORT).show()
-            } else {
-                Toast.makeText(navController.context, "Failed to upload photo", Toast.LENGTH_SHORT).show()
-            }
+            onUploadComplete()
         }
 
         override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
-            Toast.makeText(navController.context, "Error uploading photo", Toast.LENGTH_SHORT).show()
+            onUploadComplete()
         }
     })
 }

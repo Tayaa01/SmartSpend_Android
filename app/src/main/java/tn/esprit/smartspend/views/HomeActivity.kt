@@ -1,6 +1,6 @@
 package tn.esprit.smartspend
 
-import TimelineView
+import AnalyticsView
 import android.content.Context
 import android.os.Bundle
 import android.util.Log
@@ -20,6 +20,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
@@ -29,6 +30,7 @@ import tn.esprit.smartspend.model.Category
 import tn.esprit.smartspend.model.Expense
 import tn.esprit.smartspend.model.Income
 import tn.esprit.smartspend.network.RetrofitInstance
+import tn.esprit.smartspend.ui.theme.LeastImportantColor
 import tn.esprit.smartspend.ui.theme.Navy
 import tn.esprit.smartspend.ui.theme.Sand
 import tn.esprit.smartspend.ui.theme.SmartSpendTheme
@@ -79,23 +81,25 @@ fun MainScreen(context: Context) {
 fun BottomNavigationBar(navController: NavHostController) {
     val items = listOf(
         BottomNavItem.Home,
-        BottomNavItem.Timeline,
         BottomNavItem.Analytics,
         BottomNavItem.Profile
     )
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
 
     NavigationBar(containerColor = Navy) {
         items.forEach { item ->
+            val isSelected = currentRoute == item.route
             NavigationBarItem(
                 icon = {
                     Icon(
                         imageVector = item.icon,
                         contentDescription = item.title,
-                        tint = Sand
+                        tint = if (isSelected) LeastImportantColor else Sand
                     )
                 },
-                label = { Text(text = item.title, color = Sand) },
-                selected = false,
+                label = { Text(text = item.title, color = if (isSelected) Sand else Sand) },
+                selected = isSelected,
                 onClick = {
                     navController.navigate(item.route) {
                         popUpTo(navController.graph.startDestinationId) { saveState = true }
@@ -136,9 +140,7 @@ fun NavigationGraph(
                 }
             )
         }
-        composable(BottomNavItem.Timeline.route) {
-            TimelineView()
-        }
+
         composable(BottomNavItem.Analytics.route) { AnalyticsView() }
         composable(BottomNavItem.Profile.route) { ProfileView() }
 
@@ -150,7 +152,6 @@ fun NavigationGraph(
                 categories = categories,
                 onExpenseClick = { expense ->
                     Log.d("ExpenseClick", "Clicked expense: $expense")
-                    // You can add navigation or other actions here
                 }
             )
         }
@@ -163,7 +164,6 @@ fun NavigationGraph(
                 categories = categories,
                 onIncomeClick = { income ->
                     Log.d("IncomeClick", "Clicked income: $income")
-                    // You can add navigation or other actions here
                 }
             )
         }
@@ -220,7 +220,6 @@ suspend fun fetchExpenses(token: String?): List<Expense> {
 data class BottomNavItem(val route: String, val icon: androidx.compose.ui.graphics.vector.ImageVector, val title: String) {
     companion object {
         val Home = BottomNavItem("home", Icons.Default.Home, "Home")
-        val Timeline = BottomNavItem("timeline", Icons.Default.DateRange, "Timeline")
         val Analytics = BottomNavItem("analytics", Icons.Default.Menu, "Analytics")
         val Profile = BottomNavItem("profile", Icons.Default.Person, "Profile")
     }
