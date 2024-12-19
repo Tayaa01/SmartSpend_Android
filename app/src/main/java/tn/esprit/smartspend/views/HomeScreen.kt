@@ -460,7 +460,7 @@ fun resolveCategoryIcon(categoryId: String, categories: List<Category>): Int {
         "Transportation" -> R.drawable.carnav
         "Utilities" -> R.drawable.othernav
         "Salary" -> R.drawable.cashnav
-        else -> R.drawable.cash_11761323
+        else -> R.drawable.shopping_bag_4715368
     }
 }
 
