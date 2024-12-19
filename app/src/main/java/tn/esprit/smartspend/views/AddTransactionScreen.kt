@@ -1,6 +1,7 @@
 package tn.esprit.smartspend.views
 
 import android.Manifest
+import android.app.Activity
 import android.content.ContentUris
 import android.content.Context
 import android.content.pm.PackageManager
@@ -9,6 +10,7 @@ import android.os.Environment
 import android.provider.DocumentsContract
 import android.provider.MediaStore
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -53,6 +55,11 @@ import java.io.File
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.*
+import android.content.Intent
+import android.provider.Settings
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.appcompat.app.AlertDialog
+import androidx.core.app.ActivityCompat
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -82,13 +89,17 @@ fun AddTransactionScreen(
         }
     }
 
-    val pickImageLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-        uri?.let {
-            val filePath = getRealPathFromURI(context, it)
+    val pickMedia = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) {
+            Log.d("PhotoPicker", "Selected URI: $uri")
+            val filePath = getRealPathFromURI(context, uri)
             filePath?.let { path ->
                 val file = File(path)
                 uploadPhoto(file, token, navController)
             }
+        } else {
+            Log.d("PhotoPicker", "No media selected")
         }
     }
 
@@ -97,6 +108,8 @@ fun AddTransactionScreen(
     ) { isGranted ->
         if (isGranted) {
             dispatchTakePictureIntent(context, takePictureLauncher, currentPhotoPath)
+        } else {
+            Toast.makeText(context, "Camera permission denied", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -104,7 +117,9 @@ fun AddTransactionScreen(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
-            pickImageLauncher.launch("image/*")
+            pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+        } else {
+            Toast.makeText(context, "Storage permission denied", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -189,8 +204,6 @@ fun AddTransactionScreen(
                 modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
             )
 
-
-
             Box(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
                 OutlinedTextField(
                     value = category?.name ?: "",
@@ -252,10 +265,10 @@ fun AddTransactionScreen(
 
                 Button(
                     onClick = {
-                        if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
-                            pickImageLauncher.launch("image/*")
+                        if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_MEDIA_IMAGES) == PackageManager.PERMISSION_GRANTED) {
+                            pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
                         } else {
-                            readStoragePermissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
+                            readStoragePermissionLauncher.launch(Manifest.permission.READ_MEDIA_IMAGES)
                         }
                     },
                     shape = RoundedCornerShape(5.dp),
@@ -266,6 +279,40 @@ fun AddTransactionScreen(
             }
         }
     }
+}
+
+// Upload photo function
+fun uploadPhoto(file: File, token: String, navController: NavController) {
+    val requestFile = file.asRequestBody("image/jpeg".toMediaTypeOrNull())
+    val body = MultipartBody.Part.createFormData("file", file.name, requestFile)
+
+    RetrofitInstance.api.scanBill(token, body).enqueue(object : Callback<ResponseBody> {
+        override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
+            if (response.isSuccessful) {
+                Toast.makeText(navController.context, "Photo uploaded successfully", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(navController.context, "Failed to upload photo", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
+            Toast.makeText(navController.context, "Error uploading photo", Toast.LENGTH_SHORT).show()
+        }
+    })
+}
+
+fun showPermissionDeniedDialog(context: Context) {
+    AlertDialog.Builder(context)
+        .setTitle("Permission Denied")
+        .setMessage("Storage permission is permanently denied. Please enable it in the app settings.")
+        .setPositiveButton("Settings") { _, _ ->
+            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+            val uri = Uri.fromParts("package", context.packageName, null)
+            intent.data = uri
+            context.startActivity(intent)
+        }
+        .setNegativeButton("Cancel", null)
+        .show()
 }
 
 fun dispatchTakePictureIntent(context: Context, takePictureLauncher: ActivityResultLauncher<Uri>, currentPhotoPath: MutableState<String>) {
@@ -445,28 +492,6 @@ fun fetchCategories(isExpense: Boolean, onCategoriesFetched: (List<Category>) ->
 
         override fun onFailure(call: Call<List<Category>>, t: Throwable) {
             onCategoriesFetched(emptyList())
-        }
-    })
-}
-
-fun uploadPhoto(file: File, token: String, navController: NavController) {
-    val requestFile = file.asRequestBody("image/jpeg".toMediaTypeOrNull())
-    val body = MultipartBody.Part.createFormData("file", file.name, requestFile)
-
-    RetrofitInstance.api.scanBill(token, body).enqueue(object : Callback<ResponseBody> {
-        override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
-            if (response.isSuccessful) {
-                Log.d("uploadPhoto", "Photo uploaded successfully")
-                navController.navigate("home") {
-                    popUpTo("home") { inclusive = true }
-                }
-            } else {
-                Log.e("uploadPhoto", "Failed to upload photo: ${response.errorBody()?.string()}")
-            }
-        }
-
-        override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
-            Log.e("uploadPhoto", "Error uploading photo", t)
         }
     })
 }

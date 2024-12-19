@@ -63,6 +63,8 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3) // Material3
+    implementation ("io.coil-kt:coil-compose:2.1.0")
+    implementation ("com.guolindev.permissionx:permissionx:1.8.0")
 
     // Additional Compose dependencies with explicit versions if needed
 
