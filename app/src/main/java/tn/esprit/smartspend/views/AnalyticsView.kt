@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -20,6 +22,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextOverflow
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import tn.esprit.smartspend.model.Category
@@ -40,6 +43,7 @@ fun AnalyticsView() {
     var showCharts by remember { mutableStateOf(false) }
     var incomeData by remember { mutableStateOf(emptyList<Pair<String, Double>>()) }
     var expenseData by remember { mutableStateOf(emptyList<Pair<String, Double>>()) }
+    var selectedChartType by remember { mutableStateOf("Pie Chart") } // Add state for chart type selection
 
     val lastWeekDates = getLastWeekDates()
 
@@ -105,9 +109,45 @@ fun AnalyticsView() {
                 )
                 Spacer(modifier = Modifier.height(24.dp))
 
-                ExpensesPieChartViewWithCategories()
-                Spacer(modifier = Modifier.height(32.dp))
-                IncomePieChartViewWithCategories()
+                // Chart Type Selector
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Button(
+                        onClick = { selectedChartType = "Pie Chart" },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (selectedChartType == "Pie Chart") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface
+                        )
+                    ) {
+                        Text("Pie Chart")
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Button(
+                        onClick = { selectedChartType = "Bar Chart" },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (selectedChartType == "Bar Chart") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface
+                        )
+                    ) {
+                        Text("Bar Chart")
+                    }
+                }
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Display Selected Chart Type
+                when (selectedChartType) {
+                    "Pie Chart" -> {
+                        ExpensesPieChartViewWithCategories()
+                        Spacer(modifier = Modifier.height(32.dp))
+                        IncomePieChartViewWithCategories()
+                    }
+                    "Bar Chart" -> {
+                        ExpensesBarChartViewWithCategories()
+                        Spacer(modifier = Modifier.height(32.dp))
+                        IncomeBarChartViewWithCategories()
+                    }
+                }
+
                 Spacer(modifier = Modifier.height(32.dp))
 
                 Text(
@@ -121,15 +161,215 @@ fun AnalyticsView() {
                     expenseData = aggregatedExpenseData,
                     dates = lastWeekDates
                 )
+                Spacer(modifier = Modifier.height(32.dp))
             }
         }
     }
 }
 
+@Composable
+fun ExpensesPieChartViewWithCategories() {
+    val context = LocalContext.current
+    var expenses by remember { mutableStateOf<List<Expense>>(emptyList()) }
+    var categories by remember { mutableStateOf<Map<String, Category>>(emptyMap()) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
+
+    LaunchedEffect(Unit) {
+        val sharedPrefsManager = SharedPrefsManager(context)
+        val userToken = sharedPrefsManager.getToken()
+
+        if (userToken.isNullOrEmpty()) {
+            errorMessage = "User token not found!"
+            isLoading = false
+        } else {
+            try {
+                val expenseResponse = withContext(Dispatchers.IO) {
+                    RetrofitInstance.apiService.getExpenses(userToken).execute()
+                }
+                val categoryResponse = withContext(Dispatchers.IO) {
+                    RetrofitInstance.apiService.getCategories().execute()
+                }
+
+                if (expenseResponse.isSuccessful && categoryResponse.isSuccessful) {
+                    expenses = expenseResponse.body().orEmpty()
+                    categories = categoryResponse.body()?.associateBy { it._id }.orEmpty()
+                } else {
+                    errorMessage = "Failed to fetch data."
+                }
+            } catch (e: Exception) {
+                errorMessage = "Exception: ${e.localizedMessage}"
+            } finally {
+                isLoading = false
+            }
+        }
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .background(MaterialTheme.colorScheme.background)
+    ) {
+        if (isLoading) {
+            Text(text = "Loading...")
+        } else if (errorMessage != null) {
+            Text(text = errorMessage!!)
+        } else {
+            val groupedExpenses = expenses.groupBy { categories[it.category]?.name ?: "Unknown" }
+                .mapValues { entry -> entry.value.sumOf { it.amount } }
+
+            val categoryAmounts = groupedExpenses.map { (categoryName, total) ->
+                CategoryAmount(categoryName, total)
+            }
+
+            if (categoryAmounts.isEmpty()) {
+                Text(text = "No expenses found.")
+            } else {
+                // Create a list of colors based on the number of categories
+                val pieChartColors = generatePieChartColors(categoryAmounts.size)
+
+                Column(
+                    Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Expenses by Category",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+
+                    PieChart(
+                        data = categoryAmounts,
+                        colors = pieChartColors,
+                        modifier = Modifier.size(250.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    categoryAmounts.forEachIndexed { index, item ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(16.dp)
+                                    .background(color = pieChartColors[index])
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("${item.categoryName}: ${"%.2f".format(item.totalAmount)}")
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun IncomePieChartViewWithCategories() {
+    val context = LocalContext.current
+    var incomes by remember { mutableStateOf<List<Income>>(emptyList()) }
+    var categories by remember { mutableStateOf<Map<String, Category>>(emptyMap()) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
+
+    LaunchedEffect(Unit) {
+        val sharedPrefsManager = SharedPrefsManager(context)
+        val userToken = sharedPrefsManager.getToken()
+
+        if (userToken.isNullOrEmpty()) {
+            errorMessage = "User token not found!"
+            isLoading = false
+        } else {
+            try {
+                val incomeResponse = withContext(Dispatchers.IO) {
+                    RetrofitInstance.apiService.getIncomes(userToken).execute()
+                }
+                val categoryResponse = withContext(Dispatchers.IO) {
+                    RetrofitInstance.apiService.getCategories().execute()
+                }
+
+                if (incomeResponse.isSuccessful && categoryResponse.isSuccessful) {
+                    incomes = incomeResponse.body().orEmpty()
+                    categories = categoryResponse.body()?.associateBy { it._id }.orEmpty()
+                } else {
+                    errorMessage = "Failed to fetch data."
+                }
+            } catch (e: Exception) {
+                errorMessage = "Exception: ${e.localizedMessage}"
+            } finally {
+                isLoading = false
+            }
+        }
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .background(MaterialTheme.colorScheme.background)
+    ) {
+        if (isLoading) {
+            Text(text = "Loading...")
+        } else if (errorMessage != null) {
+            Text(text = errorMessage!!)
+        } else {
+            val groupedIncomes = incomes.groupBy { categories[it.category]?.name ?: "Unknown" }
+                .mapValues { entry -> entry.value.sumOf { it.amount } }
+
+            val categoryAmounts = groupedIncomes.map { (categoryName, total) ->
+                CategoryAmount(categoryName, total)
+            }
+
+            if (categoryAmounts.isEmpty()) {
+                Text(text = "No incomes found.")
+            } else {
+                // Create a list of colors based on the number of categories
+                val pieChartColors = generatePieChartColors(categoryAmounts.size)
+
+                Column(
+                    Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Incomes by Category",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+
+                    PieChart(
+                        data = categoryAmounts,
+                        colors = pieChartColors,
+                        modifier = Modifier.size(250.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    categoryAmounts.forEachIndexed { index, item ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(16.dp)
+                                    .background(color = pieChartColors[index])
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("${item.categoryName}: ${"%.2f".format(item.totalAmount)}")
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+fun generatePieChartColors(size: Int): List<Color> {
+    return List(size) { Color((0xFF000000..0xFFFFFFFF).random()) }
+}
 
 
 @Composable
-fun ExpensesPieChartViewWithCategories() {
+fun ExpensesBarChartViewWithCategories() {
     val context = LocalContext.current
     var expenses by remember { mutableStateOf<List<Expense>>(emptyList()) }
     var categories by remember { mutableStateOf<Map<String, Category>>(emptyMap()) }
@@ -198,27 +438,10 @@ fun ExpensesPieChartViewWithCategories() {
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
 
-                    PieChart(
+                    BarChart(
                         data = categoryAmounts,
-                        colors = categoryAmounts.map { Color((0xFF000000..0xFFFFFFFF).random()) },
-                        modifier = Modifier.size(250.dp)
+                        modifier = Modifier.fillMaxWidth().height(250.dp)
                     )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    categoryAmounts.forEachIndexed { index, item ->
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .size(16.dp)
-                                    .background(
-                                        color = Color((0xFF000000..0xFFFFFFFF).random())
-                                    )
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("${item.categoryName}: ${"%.2f".format(item.totalAmount)}")
-                        }
-                    }
                 }
             }
         }
@@ -226,32 +449,7 @@ fun ExpensesPieChartViewWithCategories() {
 }
 
 @Composable
-fun PieChart(
-    data: List<CategoryAmount>,
-    colors: List<Color>,
-    modifier: Modifier = Modifier
-) {
-    val total = data.sumOf { it.totalAmount }
-    val proportions = data.map { it.totalAmount / total }
-    val angles = proportions.map { it * 360f }
-
-    Canvas(modifier = modifier) {
-        var startAngle = 0f
-        angles.forEachIndexed { index, sweepAngle ->
-            drawArc(
-                color = colors[index % colors.size],
-                startAngle = startAngle,
-                sweepAngle = sweepAngle.toFloat(),
-                useCenter = true,
-                size = Size(size.minDimension, size.minDimension)
-            )
-            startAngle += sweepAngle.toFloat()
-        }
-    }
-}
-
-@Composable
-fun IncomePieChartViewWithCategories() {
+fun IncomeBarChartViewWithCategories() {
     val context = LocalContext.current
     var incomes by remember { mutableStateOf<List<Income>>(emptyList()) }
     var categories by remember { mutableStateOf<Map<String, Category>>(emptyMap()) }
@@ -320,32 +518,82 @@ fun IncomePieChartViewWithCategories() {
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
 
-                    PieChart(
+                    BarChart(
                         data = categoryAmounts,
-                        colors = categoryAmounts.map { Color((0xFF000000..0xFFFFFFFF).random()) },
-                        modifier = Modifier.size(250.dp)
+                        modifier = Modifier.fillMaxWidth().height(250.dp)
                     )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    categoryAmounts.forEachIndexed { index, item ->
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .size(16.dp)
-                                    .background(
-                                        color = Color((0xFF000000..0xFFFFFFFF).random())
-                                    )
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("${item.categoryName}: ${"%.2f".format(item.totalAmount)}")
-                        }
-                    }
                 }
             }
         }
     }
 }
+
+@Composable
+fun BarChart(data: List<CategoryAmount>, modifier: Modifier = Modifier) {
+    val maxAmount = data.maxOfOrNull { it.totalAmount } ?: 1f
+    val maxHeight = 200.dp  // Set a maximum height for the bars
+
+    Row(
+        verticalAlignment = Alignment.Bottom,
+        modifier = modifier.padding(horizontal = 16.dp)
+    ) {
+        data.forEach { item ->
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.padding(horizontal = 8.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .width(24.dp)
+                        .heightIn(max = maxHeight)  // Limit the height of the bars
+                        .fillMaxHeight(fraction = (item.totalAmount.toFloat() / maxAmount.toFloat()))
+                        .background(Color((0xFF000000..0xFFFFFFFF).random()))
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // Amount text - ensure it's always visible
+                Text(
+                    text = "%.2f".format(item.totalAmount),
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // Category name text
+                Text(
+                    text = item.categoryName,
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun PieChart(data: List<CategoryAmount>, colors: List<Color>, modifier: Modifier = Modifier) {
+    val total = data.sumOf { it.totalAmount }
+    val proportions = data.map { it.totalAmount / total }
+    val angles = proportions.map { it * 360f }
+
+    Canvas(modifier = modifier) {
+        var startAngle = 0f
+        angles.forEachIndexed { index, sweepAngle ->
+            drawArc(
+                color = colors[index % colors.size],
+                startAngle = startAngle,
+                sweepAngle = sweepAngle.toFloat(),
+                useCenter = true,
+                size = Size(size.minDimension, size.minDimension)
+            )
+            startAngle += sweepAngle.toFloat()
+        }
+    }
+}
+
 
 data class CategoryAmount(
     val categoryName: String,
