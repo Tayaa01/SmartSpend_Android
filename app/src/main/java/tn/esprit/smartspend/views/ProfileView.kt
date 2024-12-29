@@ -1,12 +1,10 @@
 package tn.esprit.smartspend.views
 
 import android.content.Context
-import tn.esprit.smartspend.utils.SharedPrefsManager
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -19,9 +17,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import tn.esprit.smartspend.utils.SharedPrefsManager
 
 @Composable
-fun ProfileView(context: Context, navigateToLogin: () -> Unit) {
+fun ProfileView(
+    context: Context,
+    navigateToLogin: () -> Unit,
+    navigateToPrivacyPolicy: () -> Unit
+) {
     val sharedPrefsManager = SharedPrefsManager(context)
 
     Column(
@@ -29,26 +32,7 @@ fun ProfileView(context: Context, navigateToLogin: () -> Unit) {
             .fillMaxSize()
             .background(Color.White)
     ) {
-        // Title Section with Gradient Background
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(
-                    Brush.horizontalGradient(
-                        colors = listOf(Color(0xFF3B82F6), Color(0xFF60A5FA))
-                    )
-                )
-                .padding(vertical = 20.dp, horizontal = 16.dp)
-        ) {
-            Text(
-                text = "Settings",
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White
-            )
-        }
-
-        // Profile Section
+        // Title Section
         Spacer(modifier = Modifier.height(16.dp))
         Row(
             modifier = Modifier
@@ -60,7 +44,11 @@ fun ProfileView(context: Context, navigateToLogin: () -> Unit) {
                 modifier = Modifier
                     .size(80.dp)
                     .clip(CircleShape)
-                    .background(Brush.linearGradient(colors = listOf(Color(0xFF4CAF50), Color(0xFF81C784)))),
+                    .background(
+                        Brush.linearGradient(
+                            colors = listOf(Color(0xFF4CAF50), Color(0xFF81C784))
+                        )
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -98,7 +86,13 @@ fun ProfileView(context: Context, navigateToLogin: () -> Unit) {
         )
         SettingsItem("Change Password", Icons.Default.Lock)
         Divider(color = Color(0xFFE5E7EB), thickness = 1.dp)
-        SettingsItem("Privacy Policy", Icons.Default.PrivacyTip)
+        SettingsItem(
+            title = "Privacy Policy",
+            icon = Icons.Default.PrivacyTip,
+            onClick = {
+                navigateToPrivacyPolicy() // Navigate to PrivacyPolicyScreen
+            }
+        )
 
         // Other Settings Section
         Spacer(modifier = Modifier.height(16.dp))

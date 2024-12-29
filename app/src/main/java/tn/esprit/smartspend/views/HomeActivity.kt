@@ -145,12 +145,19 @@ fun NavigationGraph(
         composable(BottomNavItem.Analytics.route) { AnalyticsView() }
         composable(BottomNavItem.Profile.route) {
             val context = LocalContext.current
-            ProfileView(context = context) {
-                navController.navigate("login") {
-                    popUpTo(0) // Supprime tous les écrans précédents pour éviter de revenir avec le bouton "retour"
+            ProfileView(
+                context = context,
+                navigateToLogin = {
+                    navController.navigate("login") {
+                        popUpTo(0) // Supprime tous les écrans précédents pour éviter de revenir avec le bouton "retour"
+                    }
+                },
+                navigateToPrivacyPolicy = {
+                    navController.navigate("privacyPolicy") // Navigation vers l'écran de Privacy Policy
                 }
-            }
+            )
         }
+
 
 
         composable("expensesView/{expensesJson}") { backStackEntry ->
