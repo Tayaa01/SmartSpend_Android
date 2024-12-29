@@ -1,5 +1,7 @@
 package tn.esprit.smartspend.views
 
+import android.content.Context
+import tn.esprit.smartspend.utils.SharedPrefsManager
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -15,38 +17,48 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun ProfileView() {
+fun ProfileView(context: Context, navigateToLogin: () -> Unit) {
+    val sharedPrefsManager = SharedPrefsManager(context)
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Brush.verticalGradient(colors = listOf(Color(0xFFF7F9FC), Color(0xFFE7E9EF))))
-            .padding(16.dp)
+            .background(Color.White)
     ) {
-        // Title Section
-        Text(
-            text = "Settings",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color(0xFF1F2937)
-        )
-        Spacer(modifier = Modifier.height(16.dp))
+        // Title Section with Gradient Background
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    Brush.horizontalGradient(
+                        colors = listOf(Color(0xFF3B82F6), Color(0xFF60A5FA))
+                    )
+                )
+                .padding(vertical = 20.dp, horizontal = 16.dp)
+        ) {
+            Text(
+                text = "Settings",
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
+        }
 
         // Profile Section
+        Spacer(modifier = Modifier.height(16.dp))
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { /* Navigate to personal details */ }
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
                 modifier = Modifier
-                    .size(70.dp)
+                    .size(80.dp)
                     .clip(CircleShape)
                     .background(Brush.linearGradient(colors = listOf(Color(0xFF4CAF50), Color(0xFF81C784)))),
                 contentAlignment = Alignment.Center
@@ -55,46 +67,60 @@ fun ProfileView() {
                     imageVector = Icons.Default.Person,
                     contentDescription = "Profile Image",
                     tint = Color.White,
-                    modifier = Modifier.size(40.dp)
+                    modifier = Modifier.size(50.dp)
                 )
             }
             Spacer(modifier = Modifier.width(16.dp))
             Column {
                 Text(
                     text = "Kapil Mohan",
-                    fontSize = 20.sp,
+                    fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF1F2937)
+                    color = Color(0xFF1E293B)
                 )
                 Text(
-                    text = "Edit personal details",
+                    text = "View and manage your profile",
                     fontSize = 14.sp,
-                    color = Color.Gray
+                    color = Color(0xFF6B7280)
                 )
             }
         }
 
-        Divider(color = Color(0xFFE0E0E0), thickness = 1.dp)
-
-        SettingsItemWithSwitch("Dark Mode", Icons.Default.DarkMode, isChecked = true)
-
-        Divider(color = Color(0xFFE0E0E0), thickness = 1.dp)
-
-        // Settings List
-        SettingsItem("Edit Profile", Icons.Default.Edit)
+        // Main Settings Section
+        Spacer(modifier = Modifier.height(16.dp))
+        Divider(color = Color(0xFFE5E7EB), thickness = 1.dp)
+        Text(
+            text = "Main Settings",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = Color(0xFF1E40AF),
+            modifier = Modifier.padding(16.dp)
+        )
         SettingsItem("Change Password", Icons.Default.Lock)
-        Divider(color = Color(0xFFE0E0E0), thickness = 1.dp)
-        SettingsItemWithSwitch("Notifications", Icons.Default.Notifications, isChecked = true)
-        Divider(color = Color(0xFFE0E0E0), thickness = 1.dp)
-        SettingsItem("Language", Icons.Default.Language)
-
-        // Privacy Policy
-        Divider(color = Color(0xFFE0E0E0), thickness = 1.dp)
+        Divider(color = Color(0xFFE5E7EB), thickness = 1.dp)
         SettingsItem("Privacy Policy", Icons.Default.PrivacyTip)
 
-        // Logout
-        SettingsItem("Logout", Icons.Default.ExitToApp, isDestructive = true)
-
+        // Other Settings Section
+        Spacer(modifier = Modifier.height(16.dp))
+        Divider(color = Color(0xFFE5E7EB), thickness = 1.dp)
+        Text(
+            text = "Other Settings",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = Color(0xFF1E40AF),
+            modifier = Modifier.padding(16.dp)
+        )
+        SettingsItem("Language", Icons.Default.Language)
+        Divider(color = Color(0xFFE5E7EB), thickness = 1.dp)
+        SettingsItem(
+            title = "Logout",
+            icon = Icons.Default.ExitToApp,
+            isDestructive = true,
+            onClick = {
+                sharedPrefsManager.clearToken()
+                navigateToLogin() // Redirect to LoginScreen
+            }
+        )
 
         // App Version Section
         Spacer(modifier = Modifier.height(32.dp))
@@ -111,20 +137,21 @@ fun ProfileView() {
 fun SettingsItem(
     title: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
-    isDestructive: Boolean = false
+    isDestructive: Boolean = false,
+    onClick: () -> Unit = {}
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { /* Handle click */ }
-            .padding(vertical = 12.dp),
+            .clickable { onClick() }
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
             imageVector = icon,
             contentDescription = title,
             tint = if (isDestructive) Color.Red else Color(0xFF1F2937),
-            modifier = Modifier.size(24.dp)
+            modifier = Modifier.size(28.dp)
         )
         Spacer(modifier = Modifier.width(16.dp))
         Text(
@@ -135,41 +162,3 @@ fun SettingsItem(
         )
     }
 }
-
-@Composable
-fun SettingsItemWithSwitch(
-    title: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    isChecked: Boolean
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = title,
-            tint = Color(0xFF1F2937),
-            modifier = Modifier.size(24.dp)
-        )
-        Spacer(modifier = Modifier.width(16.dp))
-        Text(
-            text = title,
-            fontSize = 16.sp,
-            color = Color(0xFF1F2937),
-            modifier = Modifier.weight(1f)
-        )
-        Switch(
-            checked = isChecked,
-            onCheckedChange = { /* Handle toggle */ },
-            colors = SwitchDefaults.colors(
-                checkedThumbColor = Color(0xFF4CAF50),
-                uncheckedThumbColor = Color(0xFFE0E0E0)
-            )
-        )
-    }
-}
-
-

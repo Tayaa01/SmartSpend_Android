@@ -16,6 +16,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -142,7 +143,15 @@ fun NavigationGraph(
         }
 
         composable(BottomNavItem.Analytics.route) { AnalyticsView() }
-        composable(BottomNavItem.Profile.route) { ProfileView() }
+        composable(BottomNavItem.Profile.route) {
+            val context = LocalContext.current
+            ProfileView(context = context) {
+                navController.navigate("login") {
+                    popUpTo(0) // Supprime tous les écrans précédents pour éviter de revenir avec le bouton "retour"
+                }
+            }
+        }
+
 
         composable("expensesView/{expensesJson}") { backStackEntry ->
             val expensesJson = backStackEntry.arguments?.getString("expensesJson") ?: "[]"
