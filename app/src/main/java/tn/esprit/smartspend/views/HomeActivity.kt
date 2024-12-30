@@ -65,8 +65,15 @@ fun MainScreen(context: Context) {
         expenses = fetchExpenses(token)
     }
 
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+
     Scaffold(
-        bottomBar = { BottomNavigationBar(navController) }
+        bottomBar = {
+            if (currentRoute != "login") {
+                BottomNavigationBar(navController)
+            }
+        }
     ) { innerPadding ->
         NavigationGraph(
             navController = navController,
@@ -149,11 +156,11 @@ fun NavigationGraph(
                 context = context,
                 navigateToLogin = {
                     navController.navigate("login") {
-                        popUpTo(0) // Supprime tous les écrans précédents pour éviter de revenir avec le bouton "retour"
+                        popUpTo(0) // Clear all previous screens
                     }
                 },
                 navigateToPrivacyPolicy = {
-                    navController.navigate("privacyPolicy") // Navigation vers l'écran de Privacy Policy
+                    navController.navigate("privacyPolicy") // Navigation to Privacy Policy screen
                 }
             )
         }
@@ -200,6 +207,13 @@ fun NavigationGraph(
         // Add the privacyPolicy route
         composable("privacyPolicy") {
             PrivacyPolicyScreen()
+        }
+
+        composable("login") {
+            LoginScreen(
+                onSignUpClick = { /* Handle sign up click */ },
+                onForgotPasswordClick = { /* Handle forgot password click */ }
+            )
         }
     }
 }
