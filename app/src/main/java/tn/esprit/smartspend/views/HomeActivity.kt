@@ -158,8 +158,6 @@ fun NavigationGraph(
             )
         }
 
-
-
         composable("expensesView/{expensesJson}") { backStackEntry ->
             val expensesJson = backStackEntry.arguments?.getString("expensesJson") ?: "[]"
             val expenses = Gson().fromJson(expensesJson, Array<Expense>::class.java).toList()
@@ -197,6 +195,11 @@ fun NavigationGraph(
             } else {
                 Log.d("AddTransaction", "Token is missing")
             }
+        }
+
+        // Add the privacyPolicy route
+        composable("privacyPolicy") {
+            PrivacyPolicyScreen()
         }
     }
 }
