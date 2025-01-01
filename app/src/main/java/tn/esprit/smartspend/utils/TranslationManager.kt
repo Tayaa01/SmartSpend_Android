@@ -15,7 +15,13 @@ object TranslationManager {
             "change_language" to "Change Language",
             "profile_title" to "Profile",
             "privacy_policy" to "Privacy Policy",
-            "logout" to "Logout"
+            "logout" to "Logout",
+            "email" to "Email",
+            "password" to "Password",
+            "remember_me" to "Remember Me",
+            "forgot_password" to "Forgot Password?",
+            "sign_in" to "Sign In",
+            "sign_up" to "Don't have an account? Sign up"
         ),
         "fr" to mapOf(
             "app_name" to "SmartSpend",
@@ -23,8 +29,16 @@ object TranslationManager {
             "change_language" to "Changer la langue",
             "profile_title" to "Profil",
             "privacy_policy" to "Politique de confidentialité",
-            "logout" to "Se déconnecter"
+            "logout" to "Se déconnecter",
+            "email" to "Email",
+            "password" to "Mot de passe",
+            "remember_me" to "Se souvenir de moi",
+            "forgot_password" to "Mot de passe oublié ?",
+            "sign_in" to "Se connecter",
+            "sign_up" to "Vous n'avez pas de compte ? Inscrivez-vous"
         )
+
+
     )
 
     // Default language
