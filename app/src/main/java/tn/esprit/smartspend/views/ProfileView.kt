@@ -29,6 +29,8 @@ fun ProfileView(
     TranslationManager.loadLanguagePreference(context)
     var showLanguageDialog by remember { mutableStateOf(false) }
     var selectedLanguage by remember { mutableStateOf(TranslationManager.getTranslation("language")) }
+    var isDarkModeEnabled by remember { mutableStateOf(false) } // Mode sombre
+    var areNotificationsEnabled by remember { mutableStateOf(true) } // Notifications activées
 
     if (showLanguageDialog) {
         LanguageSelectionDialog(
@@ -121,6 +123,47 @@ fun ProfileView(
             onClick = { navigateToLogin() }
         )
 
+        // New Settings Section
+        Spacer(modifier = Modifier.height(16.dp))
+        Divider(color = Color(0xFFE5E7EB), thickness = 1.dp)
+
+        // Dark Mode Toggle
+        SwitchSettingItem(
+            title = "Enable Dark Mode",
+            icon = Icons.Default.DarkMode,
+            isChecked = isDarkModeEnabled,
+            onCheckedChange = { isDarkModeEnabled = it }
+        )
+
+        // Notifications Toggle
+        SwitchSettingItem(
+            title = "Enable Notifications",
+            icon = Icons.Default.Notifications,
+            isChecked = areNotificationsEnabled,
+            onCheckedChange = { areNotificationsEnabled = it }
+        )
+
+        // Linked Accounts
+        SettingsItem(
+            title = "Manage Linked Accounts",
+            icon = Icons.Default.AccountCircle,
+            onClick = { /* Navigate to Linked Accounts Screen */ }
+        )
+
+        // Security Settings
+        SettingsItem(
+            title = "Security & Privacy",
+            icon = Icons.Default.Security,
+            onClick = { /* Navigate to Security Settings Screen */ }
+        )
+
+        // Help & Support
+        SettingsItem(
+            title = "Help & Support",
+            icon = Icons.Default.Help,
+            onClick = { /* Navigate to Help & Support Screen */ }
+        )
+
         // App Version Section
         Spacer(modifier = Modifier.height(32.dp))
         Text(
@@ -128,6 +171,46 @@ fun ProfileView(
             fontSize = 12.sp,
             color = Color(0xFF9E9E9E),
             modifier = Modifier.align(Alignment.CenterHorizontally)
+        )
+    }
+}
+
+// Component for settings with toggle switches
+@Composable
+fun SwitchSettingItem(
+    title: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    isChecked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = title,
+            tint = Color(0xFF1F2937),
+            modifier = Modifier.size(28.dp)
+        )
+        Spacer(modifier = Modifier.width(16.dp))
+        Text(
+            text = title,
+            fontSize = 16.sp,
+            color = Color(0xFF1F2937),
+            modifier = Modifier.weight(1f)
+        )
+        Switch(
+            checked = isChecked,
+            onCheckedChange = { onCheckedChange(it) },
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = Color(0xFF4CAF50),
+                uncheckedThumbColor = Color(0xFFE0E0E0),
+                checkedTrackColor = Color(0xFF81C784),
+                uncheckedTrackColor = Color(0xFFBDBDBD)
+            )
         )
     }
 }
