@@ -8,7 +8,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -17,7 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import tn.esprit.smartspend.utils.SharedPrefsManager
+import tn.esprit.smartspend.utils.TranslationManager
 
 @Composable
 fun ProfileView(
@@ -25,7 +25,22 @@ fun ProfileView(
     navigateToLogin: () -> Unit,
     navigateToPrivacyPolicy: () -> Unit
 ) {
-    val sharedPrefsManager = SharedPrefsManager(context)
+    // Charger la langue depuis les préférences
+    TranslationManager.loadLanguagePreference(context)
+    var showLanguageDialog by remember { mutableStateOf(false) }
+    var selectedLanguage by remember { mutableStateOf(TranslationManager.getTranslation("language")) }
+
+    if (showLanguageDialog) {
+        LanguageSelectionDialog(
+            currentLanguage = selectedLanguage,
+            onDismiss = { showLanguageDialog = false },
+            onLanguageSelected = { language ->
+                selectedLanguage = language
+                TranslationManager.setLanguage(context, language)
+                showLanguageDialog = false
+            }
+        )
+    }
 
     Column(
         modifier = Modifier
@@ -67,7 +82,7 @@ fun ProfileView(
                     color = Color(0xFF1E293B)
                 )
                 Text(
-                    text = "View and manage your profile",
+                    text = TranslationManager.getTranslation("profile_title"),
                     fontSize = 14.sp,
                     color = Color(0xFF6B7280)
                 )
@@ -78,42 +93,32 @@ fun ProfileView(
         Spacer(modifier = Modifier.height(16.dp))
         Divider(color = Color(0xFFE5E7EB), thickness = 1.dp)
         Text(
-            text = "Main Settings",
+            text = TranslationManager.getTranslation("change_language"),
             fontSize = 18.sp,
             fontWeight = FontWeight.SemiBold,
             color = Color(0xFF1E40AF),
             modifier = Modifier.padding(16.dp)
         )
-        SettingsItem("Change Password", Icons.Default.Lock)
-        Divider(color = Color(0xFFE5E7EB), thickness = 1.dp)
         SettingsItem(
-            title = "Privacy Policy",
+            title = TranslationManager.getTranslation("privacy_policy"),
             icon = Icons.Default.PrivacyTip,
-            onClick = {
-                navigateToPrivacyPolicy() // Navigate to PrivacyPolicyScreen
-            }
+            onClick = { navigateToPrivacyPolicy() }
         )
 
         // Other Settings Section
         Spacer(modifier = Modifier.height(16.dp))
         Divider(color = Color(0xFFE5E7EB), thickness = 1.dp)
-        Text(
-            text = "Other Settings",
-            fontSize = 18.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = Color(0xFF1E40AF),
-            modifier = Modifier.padding(16.dp)
+        SettingsItem(
+            title = TranslationManager.getTranslation("language"),
+            icon = Icons.Default.Language,
+            onClick = { showLanguageDialog = true }
         )
-        SettingsItem("Language", Icons.Default.Language)
         Divider(color = Color(0xFFE5E7EB), thickness = 1.dp)
         SettingsItem(
-            title = "Logout",
+            title = TranslationManager.getTranslation("logout"),
             icon = Icons.Default.ExitToApp,
             isDestructive = true,
-            onClick = {
-                sharedPrefsManager.clearToken()
-                navigateToLogin() // Redirect to LoginScreen
-            }
+            onClick = { navigateToLogin() }
         )
 
         // App Version Section
@@ -153,6 +158,67 @@ fun SettingsItem(
             fontSize = 16.sp,
             color = if (isDestructive) Color.Red else Color(0xFF1F2937),
             modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+@Composable
+fun LanguageSelectionDialog(
+    currentLanguage: String,
+    onDismiss: () -> Unit,
+    onLanguageSelected: (String) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = { onDismiss() },
+        title = {
+            Text(
+                text = TranslationManager.getTranslation("change_language"),
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Column {
+                LanguageOption(
+                    language = "en",
+                    label = "English",
+                    isSelected = currentLanguage == "en",
+                    onSelect = { onLanguageSelected("en") }
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                LanguageOption(
+                    language = "fr",
+                    label = "Français",
+                    isSelected = currentLanguage == "fr",
+                    onSelect = { onLanguageSelected("fr") }
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onDismiss() }) {
+                Text(text = "Close")
+            }
+        }
+    )
+}
+
+@Composable
+fun LanguageOption(language: String, label: String, isSelected: Boolean, onSelect: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onSelect() }
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        RadioButton(
+            selected = isSelected,
+            onClick = { onSelect() }
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = label,
+            fontSize = 16.sp
         )
     }
 }

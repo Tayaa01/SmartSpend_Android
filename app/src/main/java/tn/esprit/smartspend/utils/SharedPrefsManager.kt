@@ -27,6 +27,14 @@ class SharedPrefsManager(context: Context) {
         editor.remove("TOKEN_EXPIRATION_TIME")
         editor.apply()
     }
+    fun setLanguage(language: String) {
+        sharedPreferences.edit().putString("language", language).apply()
+    }
+
+    fun getLanguage(): String? {
+        return sharedPreferences.getString("language", null)
+    }
+
 
     // Save Remember Me preference
     fun saveRememberMe(rememberMe: Boolean) {
