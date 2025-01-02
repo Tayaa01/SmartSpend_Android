@@ -2,6 +2,7 @@ package tn.esprit.smartspend.utils
 
 import android.content.Context
 import android.content.SharedPreferences
+import java.util.Locale
 
 object TranslationManager {
     private const val PREFERENCE_NAME = "language_preferences"
@@ -209,7 +210,12 @@ object TranslationManager {
 
     fun loadLanguagePreference(context: Context) {
         val prefs = getSharedPreferences(context)
-        currentLanguage = prefs.getString(LANGUAGE_KEY, "en") ?: "en"
+        currentLanguage = prefs.getString(LANGUAGE_KEY, getDeviceLanguage()) ?: "en"
+    }
+
+    private fun getDeviceLanguage(): String {
+        val deviceLanguage = Locale.getDefault().language
+        return if (translations.containsKey(deviceLanguage)) deviceLanguage else "en"
     }
 
     private fun saveLanguagePreference(context: Context, language: String) {

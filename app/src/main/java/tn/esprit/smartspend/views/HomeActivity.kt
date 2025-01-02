@@ -37,12 +37,17 @@ import tn.esprit.smartspend.ui.theme.Navy
 import tn.esprit.smartspend.ui.theme.Sand
 import tn.esprit.smartspend.ui.theme.SmartSpendTheme
 import tn.esprit.smartspend.utils.SharedPrefsManager
+import tn.esprit.smartspend.utils.TranslationManager
 import tn.esprit.smartspend.views.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 class HomeActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Initialize language settings
+        TranslationManager.loadLanguagePreference(this)
+        
         setContent {
             SmartSpendTheme {
                 MainScreen(context = this@HomeActivity)
