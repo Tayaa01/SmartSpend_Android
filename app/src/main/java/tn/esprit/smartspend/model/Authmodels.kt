@@ -67,4 +67,8 @@ data class Item(
     val date: String
 )
 
+data class TokenVerificationResponse(
+    val isValid: Boolean
+)
+
 

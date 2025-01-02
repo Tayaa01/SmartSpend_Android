@@ -100,7 +100,9 @@ object TranslationManager {
             "signup_have_account" to "Already have an account? Sign In",
             "signup_passwords_not_match" to "Passwords do not match!",
             "signup_success" to "Account created successfully!",
-            "signup_failed" to "Sign-up failed!"
+            "signup_failed" to "Sign-up failed!",
+            "invalid_token" to "Invalid or expired token",
+            "verification_error" to "Error verifying token"
         ),
         "fr" to mapOf(
             "app_name" to "SmartSpend",
@@ -192,7 +194,9 @@ object TranslationManager {
             "signup_have_account" to "Vous avez déjà un compte ? Connectez-vous",
             "signup_passwords_not_match" to "Les mots de passe ne correspondent pas !",
             "signup_success" to "Compte créé avec succès !",
-            "signup_failed" to "Échec de l'inscription !"
+            "signup_failed" to "Échec de l'inscription !",
+            "invalid_token" to "Jeton invalide ou expiré",
+            "verification_error" to "Erreur lors de la vérification du jeton"
         )
     )
 
