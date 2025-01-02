@@ -1,5 +1,6 @@
 package tn.esprit.smartspend
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -7,6 +8,8 @@ import androidx.activity.compose.setContent
 import androidx.compose.runtime.*
 import tn.esprit.smartspend.ui.theme.SmartSpendTheme
 import tn.esprit.smartspend.utils.SharedPrefsManager
+import tn.esprit.smartspend.utils.TranslationManager
+import java.util.Locale
 
 
 class MainActivity : ComponentActivity() {
@@ -49,4 +52,6 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+
 }
