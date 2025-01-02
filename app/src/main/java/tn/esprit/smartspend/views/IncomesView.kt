@@ -20,6 +20,7 @@ import tn.esprit.smartspend.model.Category
 import tn.esprit.smartspend.model.Income
 import tn.esprit.smartspend.ui.theme.Navy
 import tn.esprit.smartspend.ui.theme.Teal
+import tn.esprit.smartspend.utils.TranslationManager
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -34,7 +35,7 @@ fun IncomesView(incomes: List<Income>, categories: List<Category>, onIncomeClick
             // Title Header
             item {
                 Text(
-                    text = "All Incomes",
+                    text = TranslationManager.getTranslation("all_incomes"),
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
                     color = Navy,

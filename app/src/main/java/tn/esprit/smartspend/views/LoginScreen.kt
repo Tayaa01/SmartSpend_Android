@@ -32,6 +32,7 @@ import tn.esprit.smartspend.utils.SharedPrefsManager
 import tn.esprit.smartspend.ui.theme.PrimaryColor
 import tn.esprit.smartspend.ui.theme.SecondaryColor
 import tn.esprit.smartspend.ui.theme.BackgroundColor
+import tn.esprit.smartspend.utils.TranslationManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -85,7 +86,7 @@ fun LoginScreen(onSignUpClick: () -> Unit, onForgotPasswordClick: () -> Unit) {
                 ) {
                     // Title Text
                     Text(
-                        text = "Sign In",
+                        text = TranslationManager.getTranslation("login_title"),
                         fontSize = 28.sp,
                         fontWeight = FontWeight.Bold,
                         color = PrimaryColor,
@@ -98,7 +99,7 @@ fun LoginScreen(onSignUpClick: () -> Unit, onForgotPasswordClick: () -> Unit) {
                     OutlinedTextField(
                         value = email,
                         onValueChange = { email = it },
-                        label = { Text("Email") },
+                        label = { Text(TranslationManager.getTranslation("login_email_hint")) },
                         leadingIcon = {
                             Icon(
                                 painter = painterResource(id = R.drawable.email_black),
@@ -123,7 +124,7 @@ fun LoginScreen(onSignUpClick: () -> Unit, onForgotPasswordClick: () -> Unit) {
                     OutlinedTextField(
                         value = password,
                         onValueChange = { password = it },
-                        label = { Text("Password") },
+                        label = { Text(TranslationManager.getTranslation("login_password_hint")) },
                         leadingIcon = {
                             Icon(
                                 painter = painterResource(id = R.drawable.lock_black),
@@ -168,7 +169,7 @@ fun LoginScreen(onSignUpClick: () -> Unit, onForgotPasswordClick: () -> Unit) {
                             colors = CheckboxDefaults.colors(checkedColor = PrimaryColor)
                         )
                         Text(
-                            text = "Remember Me",
+                            text = TranslationManager.getTranslation("login_remember_me"),
                             color = PrimaryColor,
                             fontSize = 16.sp
                         )
@@ -178,7 +179,7 @@ fun LoginScreen(onSignUpClick: () -> Unit, onForgotPasswordClick: () -> Unit) {
 
                     // Forgot Password Link
                     Text(
-                        text = "Forgot password?",
+                        text = TranslationManager.getTranslation("login_forgot_password"),
                         color = PrimaryColor,
                         fontSize = 15.sp,
                         modifier = Modifier
@@ -237,7 +238,7 @@ fun LoginScreen(onSignUpClick: () -> Unit, onForgotPasswordClick: () -> Unit) {
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "Sign In",
+                    text = TranslationManager.getTranslation("login_button"),
                     fontSize = 20.sp,
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
@@ -249,7 +250,7 @@ fun LoginScreen(onSignUpClick: () -> Unit, onForgotPasswordClick: () -> Unit) {
 
             // Sign Up Text
             Text(
-                text = "Don't have an account? Sign up",
+                text = TranslationManager.getTranslation("login_no_account"),
                 color = PrimaryColor,
                 fontSize = 16.sp,
                 modifier = Modifier.clickable { onSignUpClick() }

@@ -39,6 +39,7 @@ import tn.esprit.smartspend.model.Income
 import tn.esprit.smartspend.model.Item
 import tn.esprit.smartspend.network.RetrofitInstance
 import tn.esprit.smartspend.ui.theme.*
+import tn.esprit.smartspend.utils.TranslationManager
 import kotlin.math.absoluteValue
 
 @Composable
@@ -111,7 +112,7 @@ fun HomeScreen(
 
                             // Recent Expenses Section
                             SectionWithItems(
-                                title = "Recent Expenses",
+                                title = TranslationManager.getTranslation("recent_expenses"),
                                 items = expenses.take(3).map {
                                     val categoryName = resolveCategoryName(it.category, categories)
                                     val iconRes = resolveCategoryIcon(it.category, categories)
@@ -129,7 +130,7 @@ fun HomeScreen(
 
                         item {
                             SectionWithItems(
-                                title = "Recent Incomes",
+                                title = TranslationManager.getTranslation("recent_incomes"),
                                 items = incomes.take(3).map {
                                     val categoryName = resolveCategoryName(it.category, categories)
                                     val iconRes = resolveCategoryIcon(it.category, categories)
@@ -186,7 +187,7 @@ fun BalanceCard(totalIncome: Double, totalExpenses: Double, modifier: Modifier =
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "Balance: $${String.format("%.2f", totalIncome - totalExpenses)}",
+                text = "${TranslationManager.getTranslation("balance")}: $${String.format("%.2f", totalIncome - totalExpenses)}",
                 color = Sand,
                 fontSize = 26.sp,
                 fontWeight = FontWeight.Bold
@@ -196,7 +197,7 @@ fun BalanceCard(totalIncome: Double, totalExpenses: Double, modifier: Modifier =
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(text = "Expenses", color = DarkOrangeRed3, fontSize = 18.sp, fontWeight = FontWeight.Normal)
+                    Text(text = TranslationManager.getTranslation("expenses"), color = DarkOrangeRed3, fontSize = 18.sp, fontWeight = FontWeight.Normal)
                     Text(
                         text = "$${String.format("%.2f", totalExpenses)}",
                         color = DarkOrangeRed3,
@@ -205,7 +206,7 @@ fun BalanceCard(totalIncome: Double, totalExpenses: Double, modifier: Modifier =
                     )
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(text = "Income", color = Teal, fontSize = 18.sp, fontWeight = FontWeight.Normal)
+                    Text(text = TranslationManager.getTranslation("income"), color = Teal, fontSize = 18.sp, fontWeight = FontWeight.Normal)
                     Text(
                         text = "$${String.format("%.2f", totalIncome)}",
                         color = Teal,
@@ -239,7 +240,7 @@ fun SectionWithItems(
                 fontWeight = FontWeight.Bold
             )
             Text(
-                text = "View All",
+                text = TranslationManager.getTranslation("view_all"),
                 color = SupportingColor,
                 fontSize = 16.sp,
                 modifier = Modifier.clickable { onViewAllClick() }
@@ -340,7 +341,7 @@ fun SpendingProgressBar(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                text = "Spending Overview",
+                text = TranslationManager.getTranslation("spending_overview"),
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
                 color = MostImportantColor
@@ -380,14 +381,14 @@ fun SpendingProgressBar(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                text = "Spent: ${String.format("%.1f", progress * 100)}%",
+                text = "${TranslationManager.getTranslation("spent")}: ${String.format("%.1f", progress * 100)}%",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = if (progress > 1f) Red else Teal
             )
             if (progress > 1f) {
                 Text(
-                    text = "Exceeding Income!",
+                    text = TranslationManager.getTranslation("exceeding_income"),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     color = Red
@@ -447,7 +448,8 @@ fun getProgressColor(progress: Float): List<Color> {
 }
 
 fun resolveCategoryName(categoryId: String, categories: List<Category>): String {
-    return categories.find { it._id == categoryId }?.name ?: "Unknown"
+    return categories.find { it._id == categoryId }?.name 
+        ?: TranslationManager.getTranslation("unknown")
 }
 
 fun resolveCategoryIcon(categoryId: String, categories: List<Category>): Int {

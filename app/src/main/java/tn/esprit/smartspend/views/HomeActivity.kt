@@ -2,6 +2,7 @@ package tn.esprit.smartspend
 
 import AnalyticsView
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -210,10 +211,16 @@ fun NavigationGraph(
         }
 
         composable("login") {
+            val context = LocalContext.current
             LoginScreen(
                 onSignUpClick = { /* Handle sign up click */ },
                 onForgotPasswordClick = { /* Handle forgot password click */ }
             )
+            // Add this LaunchedEffect to handle activity finish
+            LaunchedEffect(Unit) {
+                (context as? HomeActivity)?.finish()
+                context.startActivity(Intent(context, MainActivity::class.java))
+            }
         }
     }
 }
