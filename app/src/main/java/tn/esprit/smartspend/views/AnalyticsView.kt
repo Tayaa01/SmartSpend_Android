@@ -38,8 +38,6 @@ import java.util.Locale
 @Composable
 fun AnalyticsView() {
     val context = LocalContext.current
-    var recommendationText by remember { mutableStateOf("Loading...") }
-    var isLoading by remember { mutableStateOf(true) }
     var showCharts by remember { mutableStateOf(false) }
     var incomeData by remember { mutableStateOf(emptyList<Pair<String, Double>>()) }
     var expenseData by remember { mutableStateOf(emptyList<Pair<String, Double>>()) }
@@ -52,8 +50,7 @@ fun AnalyticsView() {
         val userToken = sharedPrefsManager.getToken()
 
         if (userToken.isNullOrEmpty()) {
-            recommendationText = "User token not found!"
-            isLoading = false
+
         } else {
             try {
                 val incomes = withContext(Dispatchers.IO) {
@@ -67,9 +64,8 @@ fun AnalyticsView() {
                 incomeData = incomes.map { extractDateOnly(it.date) to it.amount }
                 expenseData = expenses.map { extractDateOnly(it.date) to it.amount }
             } catch (e: Exception) {
-                recommendationText = "Failed to fetch data: ${e.localizedMessage}"
+
             } finally {
-                isLoading = false
                 showCharts = true
             }
         }
@@ -93,76 +89,61 @@ fun AnalyticsView() {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
         ) {
-            if (isLoading) {
-                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-            } else {
-                Text(
-                    text = recommendationText,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                        .background(Color.White, RoundedCornerShape(12.dp))
-                        .padding(24.dp),
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                Spacer(modifier = Modifier.height(24.dp))
 
-                // Chart Type Selector
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center
+
+            // Chart Type Selector
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Button(
+                    onClick = { selectedChartType = "Pie Chart" },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (selectedChartType == "Pie Chart") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface
+                    )
                 ) {
-                    Button(
-                        onClick = { selectedChartType = "Pie Chart" },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (selectedChartType == "Pie Chart") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface
-                        )
-                    ) {
-                        Text("Pie Chart")
-                    }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Button(
-                        onClick = { selectedChartType = "Bar Chart" },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (selectedChartType == "Bar Chart") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface
-                        )
-                    ) {
-                        Text("Bar Chart")
-                    }
+                    Text("Pie Chart")
                 }
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Display Selected Chart Type
-                when (selectedChartType) {
-                    "Pie Chart" -> {
-                        ExpensesPieChartViewWithCategories()
-                        Spacer(modifier = Modifier.height(32.dp))
-                        IncomePieChartViewWithCategories()
-                    }
-                    "Bar Chart" -> {
-                        ExpensesBarChartViewWithCategories()
-                        Spacer(modifier = Modifier.height(32.dp))
-                        IncomeBarChartViewWithCategories()
-                    }
+                Spacer(modifier = Modifier.width(16.dp))
+                Button(
+                    onClick = { selectedChartType = "Bar Chart" },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (selectedChartType == "Bar Chart") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface
+                    )
+                ) {
+                    Text("Bar Chart")
                 }
-
-                Spacer(modifier = Modifier.height(32.dp))
-
-                Text(
-                    text = "Income vs Expenses (Last Week)",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
-
-                IncomeExpenseLineChart(
-                    incomeData = aggregatedIncomeData,
-                    expenseData = aggregatedExpenseData,
-                    dates = lastWeekDates
-                )
-                Spacer(modifier = Modifier.height(32.dp))
             }
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Display Selected Chart Type
+            when (selectedChartType) {
+                "Pie Chart" -> {
+                    ExpensesPieChartViewWithCategories()
+                    Spacer(modifier = Modifier.height(32.dp))
+                    IncomePieChartViewWithCategories()
+                }
+                "Bar Chart" -> {
+                    ExpensesBarChartViewWithCategories()
+                    Spacer(modifier = Modifier.height(32.dp))
+                    IncomeBarChartViewWithCategories()
+                }
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            Text(
+                text = "Income vs Expenses (Last Week)",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            IncomeExpenseLineChart(
+                incomeData = aggregatedIncomeData,
+                expenseData = aggregatedExpenseData,
+                dates = lastWeekDates
+            )
+            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }
@@ -212,7 +193,7 @@ fun ExpensesPieChartViewWithCategories() {
             .background(MaterialTheme.colorScheme.background)
     ) {
         if (isLoading) {
-            Text(text = "Loading...")
+            Text(text = "")
         } else if (errorMessage != null) {
             Text(text = errorMessage!!)
         } else {
@@ -310,7 +291,7 @@ fun IncomePieChartViewWithCategories() {
             .background(MaterialTheme.colorScheme.background)
     ) {
         if (isLoading) {
-            Text(text = "Loading...")
+            Text(text = "")
         } else if (errorMessage != null) {
             Text(text = errorMessage!!)
         } else {
@@ -413,7 +394,7 @@ fun ExpensesBarChartViewWithCategories() {
             .background(MaterialTheme.colorScheme.background)
     ) {
         if (isLoading) {
-            Text(text = "Loading...")
+            Text(text = "")
         } else if (errorMessage != null) {
             Text(text = errorMessage!!)
         } else {
