@@ -15,6 +15,10 @@ import java.util.Locale
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Initialize language settings
+        TranslationManager.loadLanguagePreference(this)
+        
         val sharedPrefsManager = SharedPrefsManager(this)
 
         // Check if "Remember Me" is enabled and a token exists
