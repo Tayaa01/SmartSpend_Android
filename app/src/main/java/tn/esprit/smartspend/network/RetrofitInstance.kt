@@ -5,7 +5,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitInstance {
     // Remplacer localhost par 10.0.2.2 pour l'accès via l'émulateur Android
-    private const val BASE_URL = "http://10.0.2.2.46:3000/"  // URL pour l'émulateur Android
+    private const val BASE_URL = "http://10.0.2.2:3000/"  // URL pour l'émulateur Android
 
     val retrofit: Retrofit by lazy {
         Retrofit.Builder()
