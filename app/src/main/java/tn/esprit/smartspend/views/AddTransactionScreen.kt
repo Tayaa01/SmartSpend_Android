@@ -152,7 +152,7 @@ fun AddTransactionScreen(
         val currentDate = getCurrentDate()
         if (isExpense) {
             if (isFormValid) {
-                val expense = Expense(amount.toDouble(), description, currentDate, category!!._id)
+                val expense = Expense("0",amount.toDouble(), description, currentDate, category!!._id)
                 addExpense(token, expense) { success ->
                     if (success) {
                         navController.navigate("home") {

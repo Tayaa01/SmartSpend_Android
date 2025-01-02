@@ -37,11 +37,21 @@ data class ResetPasswordRequest(
 data class ResetPasswordResponse(
     val message: String
 )
+
+data class BillDetail(
+    val _id: String,
+    val description: String,
+    val quantity: Int,
+    val price: Double
+)
+
 data class Expense(
+    val _id: String,
     val amount: Double,
     val description: String,
     val date: String,
-    val category: String
+    val category: String,
+    val billDetails: List<BillDetail> = emptyList()
 )
 
 data class Income(
@@ -64,7 +74,8 @@ data class Item(
     val description: String,
     val iconRes: Int,
     val amount: Double,
-    val date: String
+    val date: String,
+    val hasBillDetails: Boolean = false // Add this property
 )
 
 data class TokenVerificationResponse(

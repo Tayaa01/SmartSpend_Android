@@ -120,7 +120,8 @@ fun HomeScreen(
                                         description = it.description, // Expense description
                                         iconRes = iconRes,           // Icon for the category
                                         amount = -it.amount,         // Negative for expenses
-                                        date = it.date               // Original date string
+                                        date = it.date,               // Original date string
+                                        hasBillDetails = it.billDetails.isNotEmpty() // Add this property
                                     )
                                 },
                                 onViewAllClick = { onViewAllExpensesClick(expenses) }
@@ -222,81 +223,134 @@ fun BalanceCard(totalIncome: Double, totalExpenses: Double, modifier: Modifier =
 @Composable
 fun SectionWithItems(
     title: String,
-    items: List<Item>, // Use the Item data class here
+    items: List<Item>,
     onViewAllClick: () -> Unit
 ) {
-    Column(modifier = Modifier
-        .fillMaxWidth()
-        .padding(horizontal = 16.dp, vertical = 8.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 2.dp
+        ),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
         ) {
-            Text(
-                text = title,
-                color = Navy,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = TranslationManager.getTranslation("view_all"),
-                color = SupportingColor,
-                fontSize = 16.sp,
-                modifier = Modifier.clickable { onViewAllClick() }
-            )
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        items.forEach { item ->
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween // Align the amount to the right
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Icon on the left
-                Icon(
-                    painter = painterResource(id = item.iconRes),
-                    contentDescription = null,
-                    modifier = Modifier.size(24.dp),
-                    tint = Color.Unspecified
-                )
-
-                Spacer(modifier = Modifier.width(8.dp))
-
-                // Description and Date
-                Column(modifier = Modifier.weight(1f)) { // Takes up remaining space
-                    Text(
-                        text = item.description,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = Color.Black
-                    )
-                    Text(
-                        text = formatDate(item.date), // Use the helper function to format the date
-                        fontSize = 12.sp, // Smaller font size
-                        color = Color.Gray
-                    )
-                }
-
-                // Amount
-                val amountText = if (item.amount >= 0) {
-                    "+$${String.format("%.2f", item.amount)}"
-                } else {
-                    "-$${String.format("%.2f", item.amount.absoluteValue)}"
-                }
-                val amountColor = if (item.amount >= 0) Teal else DarkOrangeRed3
                 Text(
-                    text = amountText,
-                    fontSize = 16.sp,
-                    color = amountColor,
+                    text = title,
+                    color = Navy,
+                    fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )
+                TextButton(
+                    onClick = onViewAllClick,
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = SupportingColor
+                    )
+                ) {
+                    Text(
+                        text = TranslationManager.getTranslation("view_all"),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            items.forEach { item ->
+                TransactionItem(item = item)
+                if (item != items.last()) {
+                    Divider(
+                        modifier = Modifier.padding(vertical = 8.dp),
+                        color = Color.Gray.copy(alpha = 0.2f)
+                    )
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun TransactionItem(item: Item) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Category Icon with Background
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(Navy.copy(alpha = 0.1f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                painter = painterResource(id = item.iconRes),
+                contentDescription = null,
+                modifier = Modifier.size(24.dp),
+                tint = Color.Unspecified
+            )
+        }
+
+        Spacer(modifier = Modifier.width(12.dp))
+
+        // Description and Date
+        Column(
+            modifier = Modifier.weight(1f)
+        ) {
+            Text(
+                text = item.description,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color.Black
+            )
+            Text(
+                text = formatDate(item.date),
+                fontSize = 12.sp,
+                color = Color.Gray
+            )
+        }
+
+        // Bill Details Icon if present
+        if (item.hasBillDetails) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_receipt),
+                contentDescription = "Has Bill Details",
+                modifier = Modifier
+                    .size(24.dp)  // Increased from 16.dp
+                    .padding(end = 8.dp),
+                tint = Navy.copy(alpha = 0.8f)  // Increased opacity for better visibility
+            )
+        }
+
+        // Amount
+        val amountColor = if (item.amount >= 0) Teal else DarkOrangeRed3
+        val amountText = if (item.amount >= 0) {
+            "+$${String.format("%.2f", item.amount)}"
+        } else {
+            "-$${String.format("%.2f", item.amount.absoluteValue)}"
+        }
+        Text(
+            text = amountText,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold,
+            color = amountColor
+        )
     }
 }
 

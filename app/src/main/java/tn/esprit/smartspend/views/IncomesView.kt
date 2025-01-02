@@ -26,24 +26,45 @@ import java.util.Locale
 
 @Composable
 fun IncomesView(incomes: List<Income>, categories: List<Category>, onIncomeClick: (Income) -> Unit) {
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .background(Color(0xFFF5F5F5))
     ) {
-        LazyColumn(modifier = Modifier.fillMaxSize()) {
-            // Title Header
-            item {
-                Text(
-                    text = TranslationManager.getTranslation("all_incomes"),
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Navy,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
+        // Modern Light Header
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            color = Color.Transparent
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = TranslationManager.getTranslation("all_incomes"),
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Navy
+                    )
+                    Text(
+                        text = "${incomes.size} ${TranslationManager.getTranslation("transactions")}",
+                        fontSize = 14.sp,
+                        color = Color.Gray,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
             }
+        }
 
-            // List of Incomes
+        // List content
+        LazyColumn(
+            contentPadding = PaddingValues(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             items(incomes.size) { index ->
                 IncomeItem(
                     income = incomes[index],
@@ -57,54 +78,71 @@ fun IncomesView(incomes: List<Income>, categories: List<Category>, onIncomeClick
 
 @Composable
 fun IncomeItem(income: Income, categories: List<Category>, onClick: () -> Unit) {
-    Row(
+    Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(Color.White)
-            .clickable(onClick = onClick)
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
-        // Icon and Description
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            // Resolve category icon dynamically
-            val iconRes = resolveCategoryIcon(income.category, categories)
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Icon with background
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Navy.copy(alpha = 0.1f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(id = resolveCategoryIcon(income.category, categories)),
+                        contentDescription = null,
+                        modifier = Modifier.size(28.dp),
+                        tint = Color.Unspecified
+                    )
+                }
 
-            Image(
-                painter = painterResource(id = iconRes),
-                contentDescription = "Income Icon",
-                modifier = Modifier
-                    .size(40.dp)
-                    .padding(end = 12.dp)
-            )
+                Spacer(modifier = Modifier.width(12.dp))
 
-            Column {
+                // Description and category
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = income.description,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(top = 4.dp)
+                    ) {
+                        Text(
+                            text = formatDate(income.date),
+                            fontSize = 14.sp,
+                            color = Color.Gray
+                        )
+                        Text(
+                            text = resolveCategoryName(income.category, categories),
+                            fontSize = 14.sp,
+                            color = Navy,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.padding(start = 8.dp)
+                        )
+                    }
+                }
+
+                // Amount
                 Text(
-                    text = income.description,
+                    text = "+$${income.amount}",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.Black
-                )
-
-                Text(
-                    text = formatDate(income.date), // Format the date to dd/MM/yyyy
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = Color.Gray
+                    color = Teal
                 )
             }
         }
-
-        // Amount
-        Text(
-            text = "+ $${income.amount}",
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Bold,
-            color = Teal,
-            modifier = Modifier.padding(start = 8.dp) // Added padding before the amount
-        )
     }
 }
