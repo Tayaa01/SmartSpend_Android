@@ -527,7 +527,7 @@ fun IncomeBarChartViewWithCategories() {
         }
     }
 }
-
+//
 @Composable
 fun BarChart(data: List<CategoryAmount>, modifier: Modifier = Modifier) {
     val maxAmount = data.maxOfOrNull { it.totalAmount } ?: 1f
