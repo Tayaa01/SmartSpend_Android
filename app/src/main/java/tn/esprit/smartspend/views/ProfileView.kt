@@ -19,6 +19,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import tn.esprit.smartspend.utils.SharedPrefsManager
 import tn.esprit.smartspend.utils.TranslationManager
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.RadioButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.material3.Card
+import androidx.compose.ui.window.DialogProperties
 
 @Composable
 fun ProfileView(
@@ -97,13 +106,7 @@ fun ProfileView(
         // Main Settings Section
         Spacer(modifier = Modifier.height(16.dp))
         Divider(color = Color(0xFFE5E7EB), thickness = 1.dp)
-        Text(
-            text = TranslationManager.getTranslation("change_language"),
-            fontSize = 18.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = Color(0xFF1E40AF),
-            modifier = Modifier.padding(16.dp)
-        )
+
         SettingsItem(
             title = TranslationManager.getTranslation("privacy_policy"),
             icon = Icons.Default.PrivacyTip,
@@ -259,55 +262,125 @@ fun LanguageSelectionDialog(
 ) {
     AlertDialog(
         onDismissRequest = { onDismiss() },
+        properties = DialogProperties(dismissOnClickOutside = true),
+        containerColor = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(28.dp),
+        modifier = Modifier.fillMaxWidth(0.92f),
         title = {
-            Text(
-                text = TranslationManager.getTranslation("change_language"),
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
-            )
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Language,
+                    contentDescription = null,
+                    modifier = Modifier.size(36.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = TranslationManager.getTranslation("change_language"),
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
+                )
+            }
         },
         text = {
-            Column {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp)
+            ) {
                 LanguageOption(
-                    language = "en",
-                    label = "English",
+                    languageCode = "en",
+                    languageName = "English",
+                    flag = "🇺🇸",
                     isSelected = currentLanguage == "en",
                     onSelect = { onLanguageSelected("en") }
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 LanguageOption(
-                    language = "fr",
-                    label = "Français",
+                    languageCode = "fr",
+                    languageName = "Français",
+                    flag = "🇫🇷",
                     isSelected = currentLanguage == "fr",
                     onSelect = { onLanguageSelected("fr") }
                 )
             }
         },
         confirmButton = {
-            TextButton(onClick = { onDismiss() }) {
-                Text(text = TranslationManager.getTranslation("close"))
+            TextButton(
+                onClick = { onDismiss() },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .height(48.dp),
+                shape = RoundedCornerShape(24.dp),
+                colors = ButtonDefaults.textButtonColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            ) {
+                Text(
+                    text = TranslationManager.getTranslation("close"),
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium
+                )
             }
         }
     )
 }
 
 @Composable
-fun LanguageOption(language: String, label: String, isSelected: Boolean, onSelect: () -> Unit) {
-    Row(
+fun LanguageOption(
+    languageCode: String,
+    languageName: String,
+    flag: String,
+    isSelected: Boolean,
+    onSelect: () -> Unit
+) {
+    val backgroundColor = animateColorAsState(
+        targetValue = if (isSelected) 
+            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+        else MaterialTheme.colorScheme.surface,
+        label = "backgroundColor"
+    )
+
+    Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onSelect() }
-            .padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .clickable { onSelect() },
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = if (isSelected) 4.dp else 0.dp
+        )
     ) {
-        RadioButton(
-            selected = isSelected,
-            onClick = { onSelect() }
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(
-            text = label,
-            fontSize = 16.sp
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(backgroundColor.value)
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = flag,
+                fontSize = 24.sp,
+                modifier = Modifier.padding(end = 12.dp)
+            )
+            Text(
+                text = languageName,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.weight(1f)
+            )
+            RadioButton(
+                selected = isSelected,
+                onClick = { onSelect() },
+                colors = RadioButtonDefaults.colors(
+                    selectedColor = MaterialTheme.colorScheme.primary
+                )
+            )
+        }
     }
 }
