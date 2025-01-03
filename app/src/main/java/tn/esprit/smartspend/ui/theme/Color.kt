@@ -3,14 +3,14 @@ package tn.esprit.smartspend.ui.theme
 import androidx.compose.ui.graphics.Color
 
 // Updated color palette with descriptive names
-val MostImportantColor = Color(0xFF2F7E79) // Most important
-val ImportantColor = Color(0xFF625b71)
-val SupportingColor = Color(0xFF1B1B1F)
-val LeastImportantColor = Color(0xFF155263)
-val Zinc = Color(0xFF2F7E79)
-val Red = Color(0xFFDB1F48)
+val MostImportantColor = Color(0xFF2F7E79)  // rgb(47, 126, 121)
+val ImportantColor = Color(0xFF625B71)       // rgb(98, 91, 113)
+val SupportingColor = Color(0xFF1B1B1F)      // rgb(27, 27, 31)
+val LeastImportantColor = Color(0xFF155263)  // rgb(21, 82, 99)
+val Zinc = Color(0xFF2F7E79)                 // rgb(47, 126, 121)
+val CustomRed = Color(0xFFDB1F48)            // rgb(219, 31, 72)
 val Sand = Color(0xFFe5ddc8)
-val Teal = Color(0xFF01949A)
+val Teal = Color(0xFF019498)                 // rgb(1, 148, 154)
 val Navy = Color(0xFF205a6a)
 val LightNavy1 = Color(0xFF3A7D8A)
 val LightNavy2 = Color(0xFF5499A8)

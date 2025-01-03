@@ -51,10 +51,7 @@ interface ApiService {
     ): Call<Expense>  // Note: Return type should be Call<Expense>
 
     @GET("recommendations/generate")
-    suspend fun getRecommendation(
-        @Query("userToken") userToken: String,  // Paramètre pour le token
-        @Query("period") period: String         // Paramètre pour la période
-    ): Recommendation
+    fun getRecommendations(@Query("userToken") userToken: String): Call<RecommendationResponse>
 
     // New method to fetch total expenses
     @GET("expense/total")
