@@ -21,6 +21,10 @@ import retrofit2.Response
 import tn.esprit.smartspend.model.ForgotPasswordRequest
 import tn.esprit.smartspend.model.ForgotPasswordResponse
 import tn.esprit.smartspend.network.RetrofitInstance
+import tn.esprit.smartspend.ui.theme.MostImportantColor
+import tn.esprit.smartspend.ui.theme.Navy
+import tn.esprit.smartspend.ui.theme.Sand
+import tn.esprit.smartspend.utils.TranslationManager
 import tn.esprit.smartspend.views.OtpDialog
 import tn.esprit.smartspend.views.ResetPasswordDialog
 
@@ -34,47 +38,48 @@ fun ForgotPasswordScreen(onBackToLogin: () -> Unit) {
     var isLoading by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
-    val primaryColor = Color(0xFF9575CD)
-
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(25.dp)
-            .background(Color.White),
+            .background(Color.White)
+            .padding(25.dp),
         verticalArrangement = Arrangement.SpaceBetween
     ) {
-        // Top Section: Title and Email Input
         Column(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.Start
         ) {
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = "Forgot Password",
+                text = TranslationManager.getTranslation("forgot_password_title"),
                 style = TextStyle(
                     fontSize = 30.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.Black
+                    color = Navy
                 )
             )
             Spacer(modifier = Modifier.height(24.dp))
             Text(
-                text = "Enter your email address below to reset your password.",
+                text = TranslationManager.getTranslation("forgot_password_desc"),
                 style = TextStyle(
                     fontSize = 18.sp,
-                    color = Color.Gray
+                    color = MostImportantColor
                 )
             )
             Spacer(modifier = Modifier.height(35.dp))
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
-                label = { Text("Email Address") },
+                label = { Text(TranslationManager.getTranslation("email_address")) },
                 modifier = Modifier.fillMaxWidth(),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Navy,
+                    focusedLabelColor = Navy,
+                    cursorColor = Navy
+                )
             )
         }
 
-        // Bottom Section: Button and Back to Login
         Column(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -91,7 +96,7 @@ fun ForgotPasswordScreen(onBackToLogin: () -> Unit) {
                                 ) {
                                     isLoading = false
                                     if (response.isSuccessful) {
-                                        Toast.makeText(context, "Password reset email sent!", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, TranslationManager.getTranslation("reset_email_sent"), Toast.LENGTH_SHORT).show()
                                         isOtpDialogVisible = true
                                     } else {
                                         Toast.makeText(context, "Error: ${response.message()}", Toast.LENGTH_SHORT).show()
@@ -104,31 +109,37 @@ fun ForgotPasswordScreen(onBackToLogin: () -> Unit) {
                                 }
                             })
                     } else {
-                        Toast.makeText(context, "Please enter a valid email address", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, TranslationManager.getTranslation("invalid_email"), Toast.LENGTH_SHORT).show()
                     }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
-                shape = RoundedCornerShape(9.dp), // Rounded corners with 9° degree
-                colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
+                shape = RoundedCornerShape(9.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Navy)
             ) {
                 if (isLoading) {
-                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                    CircularProgressIndicator(color = Sand, modifier = Modifier.size(24.dp))
                 } else {
-                    Text("Send Reset Code", style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold))
+                    Text(
+                        text = TranslationManager.getTranslation("send_reset_code"),
+                        style = TextStyle(
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Sand
+                        )
+                    )
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "Back to Login",
+                text = TranslationManager.getTranslation("back_to_login"),
                 style = TextStyle(
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium,
-                    color = primaryColor, // Matching button color
-                    letterSpacing = 0.5.sp
+                    color = Navy
                 ),
                 modifier = Modifier
                     .clickable { onBackToLogin() }
@@ -137,7 +148,7 @@ fun ForgotPasswordScreen(onBackToLogin: () -> Unit) {
         }
     }
 
-    // OTP Dialog
+    // Show dialogs with updated styling
     if (isOtpDialogVisible) {
         OtpDialog(
             onTokenSubmitted = { enteredToken ->
@@ -145,23 +156,18 @@ fun ForgotPasswordScreen(onBackToLogin: () -> Unit) {
                 isOtpDialogVisible = false
                 isResetPasswordDialogVisible = true
             },
-            onDismiss = {
-                isOtpDialogVisible = false
-            }
+            onDismiss = { isOtpDialogVisible = false }
         )
     }
 
-    // Reset Password Dialog
     if (isResetPasswordDialogVisible) {
         ResetPasswordDialog(
             token = token,
             onPasswordReset = {
-                Toast.makeText(context, "Password reset successful!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, TranslationManager.getTranslation("reset_success"), Toast.LENGTH_SHORT).show()
                 onBackToLogin()
             },
-            onDismiss = {
-                isResetPasswordDialogVisible = false
-            }
+            onDismiss = { isResetPasswordDialogVisible = false }
         )
     }
 }

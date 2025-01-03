@@ -31,6 +31,7 @@ import tn.esprit.smartspend.model.SignUpResponse
 import tn.esprit.smartspend.network.RetrofitInstance
 import tn.esprit.smartspend.ui.theme.PrimaryColor
 import tn.esprit.smartspend.ui.theme.SecondaryColor
+import tn.esprit.smartspend.utils.TranslationManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -82,7 +83,7 @@ fun SignUpScreen(onSignInClick: () -> Unit) {
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "Sign Up",
+                        text = TranslationManager.getTranslation("signup_title"),
                         fontSize = 28.sp,
                         fontWeight = FontWeight.Bold,
                         color = PrimaryColor,
@@ -95,7 +96,7 @@ fun SignUpScreen(onSignInClick: () -> Unit) {
                     OutlinedTextField(
                         value = name,
                         onValueChange = { name = it },
-                        label = { Text("Name") },
+                        label = { Text(TranslationManager.getTranslation("signup_name_hint")) },
                         modifier = Modifier.fillMaxWidth(),
                         textStyle = TextStyle(fontSize = 18.sp, color = PrimaryColor),
                         colors = TextFieldDefaults.outlinedTextFieldColors(
@@ -111,7 +112,7 @@ fun SignUpScreen(onSignInClick: () -> Unit) {
                     OutlinedTextField(
                         value = email,
                         onValueChange = { email = it },
-                        label = { Text("Email") },
+                        label = { Text(TranslationManager.getTranslation("signup_email_hint")) },
                         modifier = Modifier.fillMaxWidth(),
                         textStyle = TextStyle(fontSize = 18.sp, color = PrimaryColor),
                         colors = TextFieldDefaults.outlinedTextFieldColors(
@@ -194,22 +195,22 @@ fun SignUpScreen(onSignInClick: () -> Unit) {
                     )
                     .clickable {
                         if (password != confirmPassword) {
-                            Toast.makeText(context, "Passwords do not match!", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, TranslationManager.getTranslation("signup_passwords_not_match"), Toast.LENGTH_SHORT).show()
                         } else {
                             val signUpRequest = SignUpRequest(name, email, password)
 
                             RetrofitInstance.api.signUp(signUpRequest).enqueue(object : Callback<SignUpResponse> {
                                 override fun onResponse(call: Call<SignUpResponse>, response: Response<SignUpResponse>) {
                                     if (response.isSuccessful) {
-                                        Toast.makeText(context, "Account created successfully!", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, TranslationManager.getTranslation("signup_success"), Toast.LENGTH_SHORT).show()
                                         onSignInClick()
                                     } else {
-                                        Toast.makeText(context, "Sign-up failed!", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, TranslationManager.getTranslation("signup_failed"), Toast.LENGTH_SHORT).show()
                                     }
                                 }
 
                                 override fun onFailure(call: Call<SignUpResponse>, t: Throwable) {
-                                    Toast.makeText(context, "Sign-up failed: ${t.message}", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, TranslationManager.getTranslation("signup_failed"), Toast.LENGTH_SHORT).show()
                                 }
                             })
                         }
@@ -217,7 +218,7 @@ fun SignUpScreen(onSignInClick: () -> Unit) {
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "Sign Up",
+                    text = TranslationManager.getTranslation("signup_button"),
                     fontSize = 20.sp,
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
@@ -229,7 +230,7 @@ fun SignUpScreen(onSignInClick: () -> Unit) {
 
             // Sign-In Text Link
             Text(
-                text = "Already have an account? Sign In",
+                text = TranslationManager.getTranslation("signup_have_account"),
                 color = PrimaryColor,
                 fontSize = 16.sp,
                 modifier = Modifier.clickable { onSignInClick() }

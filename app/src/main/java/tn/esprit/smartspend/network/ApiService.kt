@@ -32,8 +32,10 @@ interface ApiService {
 
     @GET("expense")
     fun getExpenses(@Query("token") token: String): Call<List<Expense>>
-    @GET("income")
+    
+    @GET("income") 
     fun getIncomes(@Query("token") token: String): Call<List<Income>>
+    
     @GET("categories")
     fun getCategories(): Call<List<Category>>
 
@@ -73,4 +75,7 @@ interface ApiService {
         @Query("token") token: String,
         @Part file: MultipartBody.Part
     ): Call<ResponseBody>
+
+    @GET("auth/verify-reset-token")
+    fun verifyResetToken(@Query("token") token: String): Call<TokenVerificationResponse>
 }

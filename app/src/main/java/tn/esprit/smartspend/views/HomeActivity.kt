@@ -2,6 +2,7 @@ package tn.esprit.smartspend
 
 import AnalyticsView
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -36,12 +37,17 @@ import tn.esprit.smartspend.ui.theme.Navy
 import tn.esprit.smartspend.ui.theme.Sand
 import tn.esprit.smartspend.ui.theme.SmartSpendTheme
 import tn.esprit.smartspend.utils.SharedPrefsManager
+import tn.esprit.smartspend.utils.TranslationManager
 import tn.esprit.smartspend.views.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 class HomeActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Initialize language settings
+        TranslationManager.loadLanguagePreference(this)
+        
         setContent {
             SmartSpendTheme {
                 MainScreen(context = this@HomeActivity)
@@ -210,10 +216,16 @@ fun NavigationGraph(
         }
 
         composable("login") {
+            val context = LocalContext.current
             LoginScreen(
                 onSignUpClick = { /* Handle sign up click */ },
                 onForgotPasswordClick = { /* Handle forgot password click */ }
             )
+            // Add this LaunchedEffect to handle activity finish
+            LaunchedEffect(Unit) {
+                (context as? HomeActivity)?.finish()
+                context.startActivity(Intent(context, MainActivity::class.java))
+            }
         }
     }
 }

@@ -15,6 +15,10 @@ import java.util.Locale
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Initialize language settings
+        TranslationManager.loadLanguagePreference(this)
+        
         val sharedPrefsManager = SharedPrefsManager(this)
 
         // Check if "Remember Me" is enabled and a token exists
@@ -27,8 +31,8 @@ class MainActivity : ComponentActivity() {
         } else {
             setContent {
                 SmartSpendTheme {
-                    var isLoginScreen by remember { mutableStateOf(true) }
-                    var showForgotPasswordScreen by remember { mutableStateOf(false) } // Nouvelle variable d'état pour afficher l'écran de mot de passe oublié
+                    var isLoginScreen by remember { mutableStateOf(!intent.getBooleanExtra("showSignUp", false)) }
+                    var showForgotPasswordScreen by remember { mutableStateOf(intent.getBooleanExtra("showForgotPassword", false)) }
 
                     // Si showForgotPasswordScreen est true, on affiche l'écran ForgotPasswordScreen
                     if (showForgotPasswordScreen) {

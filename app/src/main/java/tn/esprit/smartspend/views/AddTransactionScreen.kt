@@ -60,6 +60,7 @@ import android.provider.Settings
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
+import tn.esprit.smartspend.utils.TranslationManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -92,7 +93,7 @@ fun AddTransactionScreen(
                 navController.navigate("home") {
                     popUpTo("home") { inclusive = true }
                 }
-                Toast.makeText(context, "Photo uploaded successfully", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, TranslationManager.getTranslation("upload_success"), Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -109,7 +110,7 @@ fun AddTransactionScreen(
                     navController.navigate("home") {
                         popUpTo("home") { inclusive = true }
                     }
-                    Toast.makeText(context, "Photo uploaded successfully", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, TranslationManager.getTranslation("upload_success"), Toast.LENGTH_SHORT).show()
                 }
             }
         } else {
@@ -151,7 +152,12 @@ fun AddTransactionScreen(
         val currentDate = getCurrentDate()
         if (isExpense) {
             if (isFormValid) {
-                val expense = Expense(amount.toDouble(), description, currentDate, category!!._id)
+                val expense = Expense(
+                    amount = amount.toDouble(), 
+                    description = description, 
+                    date = currentDate, 
+                    category = category!!._id
+                )
                 addExpense(token, expense) { success ->
                     if (success) {
                         navController.navigate("home") {
@@ -181,7 +187,7 @@ fun AddTransactionScreen(
     Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Column {
             Text(
-                text = "Add Transaction",
+                text = TranslationManager.getTranslation("add_transaction"),
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 16.dp)
@@ -196,20 +202,22 @@ fun AddTransactionScreen(
                     onClick = { isExpense = true },
                     colors = RadioButtonDefaults.colors(selectedColor = PrimaryColor)
                 )
-                Text(text = "Expense", modifier = Modifier.padding(start = 8.dp))
+                Text(text = TranslationManager.getTranslation("expense"), 
+                     modifier = Modifier.padding(start = 8.dp))
                 Spacer(modifier = Modifier.width(16.dp))
                 RadioButton(
                     selected = !isExpense,
                     onClick = { isExpense = false },
                     colors = RadioButtonDefaults.colors(selectedColor = PrimaryColor)
                 )
-                Text(text = "Income", modifier = Modifier.padding(start = 8.dp))
+                Text(text = TranslationManager.getTranslation("income"), 
+                     modifier = Modifier.padding(start = 8.dp))
             }
 
             OutlinedTextField(
                 value = amount,
                 onValueChange = { amount = it },
-                label = { Text("Amount") },
+                label = { Text(TranslationManager.getTranslation("amount")) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
             )
@@ -217,7 +225,7 @@ fun AddTransactionScreen(
             OutlinedTextField(
                 value = description,
                 onValueChange = { description = it },
-                label = { Text("Description") },
+                label = { Text(TranslationManager.getTranslation("description")) },
                 modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
             )
 
@@ -225,7 +233,7 @@ fun AddTransactionScreen(
                 OutlinedTextField(
                     value = category?.name ?: "",
                     onValueChange = {},
-                    label = { Text("Category") },
+                    label = { Text(TranslationManager.getTranslation("category")) },
                     readOnly = true,
                     trailingIcon = {
                         Icon(
@@ -266,7 +274,7 @@ fun AddTransactionScreen(
                 colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor),
                 modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
             ) {
-                Text(text = "Save", color = Color.White)
+                Text(text = TranslationManager.getTranslation("save"), color = Color.White)
             }
 
             Row(
@@ -283,9 +291,18 @@ fun AddTransactionScreen(
                     },
                     shape = RoundedCornerShape(5.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = SecondaryColor),
-                    modifier = Modifier.weight(1f).padding(end = 8.dp)
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(56.dp)  // Increased height
+                        .padding(end = 8.dp)
                 ) {
-                    Text(text = "Take Photo", color = Color.White)
+                    Text(
+                        text = TranslationManager.getTranslation("take_photo"),
+                        color = Color.White,
+                        maxLines = 2,  // Allow 2 lines
+                        softWrap = true,  // Enable wrapping
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    )
                 }
 
                 Button(
@@ -298,9 +315,18 @@ fun AddTransactionScreen(
                     },
                     shape = RoundedCornerShape(5.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = SecondaryColor),
-                    modifier = Modifier.weight(1f).padding(start = 8.dp)
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(56.dp)  // Increased height
+                        .padding(start = 8.dp)
                 ) {
-                    Text(text = "Upload Photo", color = Color.White)
+                    Text(
+                        text = TranslationManager.getTranslation("upload_photo"),
+                        color = Color.White,
+                        maxLines = 2,  // Allow 2 lines
+                        softWrap = true,  // Enable wrapping
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    )
                 }
             }
         }
@@ -316,7 +342,8 @@ fun UploadInProgressDialog(onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text(text = "Uploading", style = MaterialTheme.typography.titleMedium)
+            Text(text = TranslationManager.getTranslation("uploading"),
+                 style = MaterialTheme.typography.titleMedium)
         },
         text = {
             Box(
@@ -328,7 +355,7 @@ fun UploadInProgressDialog(onDismiss: () -> Unit) {
                 ) {
                     CircularProgressIndicator()
                     Spacer(modifier = Modifier.height(16.dp))
-                    Text(text = "Please wait while the upload completes.")
+                    Text(text = TranslationManager.getTranslation("upload_wait"))
                 }
             }
         },

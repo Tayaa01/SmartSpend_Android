@@ -39,6 +39,7 @@ import tn.esprit.smartspend.model.Income
 import tn.esprit.smartspend.model.Item
 import tn.esprit.smartspend.network.RetrofitInstance
 import tn.esprit.smartspend.ui.theme.*
+import tn.esprit.smartspend.utils.TranslationManager
 import kotlin.math.absoluteValue
 
 @Composable
@@ -111,7 +112,7 @@ fun HomeScreen(
 
                             // Recent Expenses Section
                             SectionWithItems(
-                                title = "Recent Expenses",
+                                title = TranslationManager.getTranslation("recent_expenses"),
                                 items = expenses.take(3).map {
                                     val categoryName = resolveCategoryName(it.category, categories)
                                     val iconRes = resolveCategoryIcon(it.category, categories)
@@ -119,7 +120,8 @@ fun HomeScreen(
                                         description = it.description, // Expense description
                                         iconRes = iconRes,           // Icon for the category
                                         amount = -it.amount,         // Negative for expenses
-                                        date = it.date               // Original date string
+                                        date = it.date,               // Original date string
+                                        hasBillDetails = it.billDetails.isNotEmpty() // Add this property
                                     )
                                 },
                                 onViewAllClick = { onViewAllExpensesClick(expenses) }
@@ -129,7 +131,7 @@ fun HomeScreen(
 
                         item {
                             SectionWithItems(
-                                title = "Recent Incomes",
+                                title = TranslationManager.getTranslation("recent_incomes"),
                                 items = incomes.take(3).map {
                                     val categoryName = resolveCategoryName(it.category, categories)
                                     val iconRes = resolveCategoryIcon(it.category, categories)
@@ -186,7 +188,7 @@ fun BalanceCard(totalIncome: Double, totalExpenses: Double, modifier: Modifier =
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "Balance: $${String.format("%.2f", totalIncome - totalExpenses)}",
+                text = "${TranslationManager.getTranslation("balance")}: $${String.format("%.2f", totalIncome - totalExpenses)}",
                 color = Sand,
                 fontSize = 26.sp,
                 fontWeight = FontWeight.Bold
@@ -196,7 +198,7 @@ fun BalanceCard(totalIncome: Double, totalExpenses: Double, modifier: Modifier =
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(text = "Expenses", color = DarkOrangeRed3, fontSize = 18.sp, fontWeight = FontWeight.Normal)
+                    Text(text = TranslationManager.getTranslation("expenses"), color = DarkOrangeRed3, fontSize = 18.sp, fontWeight = FontWeight.Normal)
                     Text(
                         text = "$${String.format("%.2f", totalExpenses)}",
                         color = DarkOrangeRed3,
@@ -205,7 +207,7 @@ fun BalanceCard(totalIncome: Double, totalExpenses: Double, modifier: Modifier =
                     )
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(text = "Income", color = Teal, fontSize = 18.sp, fontWeight = FontWeight.Normal)
+                    Text(text = TranslationManager.getTranslation("income"), color = Teal, fontSize = 18.sp, fontWeight = FontWeight.Normal)
                     Text(
                         text = "$${String.format("%.2f", totalIncome)}",
                         color = Teal,
@@ -221,81 +223,134 @@ fun BalanceCard(totalIncome: Double, totalExpenses: Double, modifier: Modifier =
 @Composable
 fun SectionWithItems(
     title: String,
-    items: List<Item>, // Use the Item data class here
+    items: List<Item>,
     onViewAllClick: () -> Unit
 ) {
-    Column(modifier = Modifier
-        .fillMaxWidth()
-        .padding(horizontal = 16.dp, vertical = 8.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 2.dp
+        ),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
         ) {
-            Text(
-                text = title,
-                color = Navy,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = "View All",
-                color = SupportingColor,
-                fontSize = 16.sp,
-                modifier = Modifier.clickable { onViewAllClick() }
-            )
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        items.forEach { item ->
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween // Align the amount to the right
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Icon on the left
-                Icon(
-                    painter = painterResource(id = item.iconRes),
-                    contentDescription = null,
-                    modifier = Modifier.size(24.dp),
-                    tint = Color.Unspecified
-                )
-
-                Spacer(modifier = Modifier.width(8.dp))
-
-                // Description and Date
-                Column(modifier = Modifier.weight(1f)) { // Takes up remaining space
-                    Text(
-                        text = item.description,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = Color.Black
-                    )
-                    Text(
-                        text = formatDate(item.date), // Use the helper function to format the date
-                        fontSize = 12.sp, // Smaller font size
-                        color = Color.Gray
-                    )
-                }
-
-                // Amount
-                val amountText = if (item.amount >= 0) {
-                    "+$${String.format("%.2f", item.amount)}"
-                } else {
-                    "-$${String.format("%.2f", item.amount.absoluteValue)}"
-                }
-                val amountColor = if (item.amount >= 0) Teal else DarkOrangeRed3
                 Text(
-                    text = amountText,
-                    fontSize = 16.sp,
-                    color = amountColor,
+                    text = title,
+                    color = Navy,
+                    fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )
+                TextButton(
+                    onClick = onViewAllClick,
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = SupportingColor
+                    )
+                ) {
+                    Text(
+                        text = TranslationManager.getTranslation("view_all"),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            items.forEach { item ->
+                TransactionItem(item = item)
+                if (item != items.last()) {
+                    Divider(
+                        modifier = Modifier.padding(vertical = 8.dp),
+                        color = Color.Gray.copy(alpha = 0.2f)
+                    )
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun TransactionItem(item: Item) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Category Icon with Background
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(Navy.copy(alpha = 0.1f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                painter = painterResource(id = item.iconRes),
+                contentDescription = null,
+                modifier = Modifier.size(24.dp),
+                tint = Color.Unspecified
+            )
+        }
+
+        Spacer(modifier = Modifier.width(12.dp))
+
+        // Description and Date
+        Column(
+            modifier = Modifier.weight(1f)
+        ) {
+            Text(
+                text = item.description,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color.Black
+            )
+            Text(
+                text = formatDate(item.date),
+                fontSize = 12.sp,
+                color = Color.Gray
+            )
+        }
+
+        // Bill Details Icon if present
+        if (item.hasBillDetails) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_receipt),
+                contentDescription = "Has Bill Details",
+                modifier = Modifier
+                    .size(24.dp)  // Increased from 16.dp
+                    .padding(end = 8.dp),
+                tint = Navy.copy(alpha = 0.8f)  // Increased opacity for better visibility
+            )
+        }
+
+        // Amount
+        val amountColor = if (item.amount >= 0) Teal else DarkOrangeRed3
+        val amountText = if (item.amount >= 0) {
+            "+$${String.format("%.2f", item.amount)}"
+        } else {
+            "-$${String.format("%.2f", item.amount.absoluteValue)}"
+        }
+        Text(
+            text = amountText,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold,
+            color = amountColor
+        )
     }
 }
 
@@ -340,7 +395,7 @@ fun SpendingProgressBar(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                text = "Spending Overview",
+                text = TranslationManager.getTranslation("spending_overview"),
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
                 color = MostImportantColor
@@ -380,14 +435,14 @@ fun SpendingProgressBar(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                text = "Spent: ${String.format("%.1f", progress * 100)}%",
+                text = "${TranslationManager.getTranslation("spent")}: ${String.format("%.1f", progress * 100)}%",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = if (progress > 1f) Red else Teal
             )
             if (progress > 1f) {
                 Text(
-                    text = "Exceeding Income!",
+                    text = TranslationManager.getTranslation("exceeding_income"),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     color = Red
@@ -447,7 +502,8 @@ fun getProgressColor(progress: Float): List<Color> {
 }
 
 fun resolveCategoryName(categoryId: String, categories: List<Category>): String {
-    return categories.find { it._id == categoryId }?.name ?: "Unknown"
+    return categories.find { it._id == categoryId }?.name 
+        ?: TranslationManager.getTranslation("unknown")
 }
 
 fun resolveCategoryIcon(categoryId: String, categories: List<Category>): Int {

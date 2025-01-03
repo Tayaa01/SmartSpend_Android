@@ -17,7 +17,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import tn.esprit.smartspend.utils.SharedPrefsManager
 import tn.esprit.smartspend.utils.TranslationManager
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.RadioButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.material3.Card
+import androidx.compose.ui.window.DialogProperties
 
 @Composable
 fun ProfileView(
@@ -31,6 +41,8 @@ fun ProfileView(
     var selectedLanguage by remember { mutableStateOf(TranslationManager.getTranslation("language")) }
     var isDarkModeEnabled by remember { mutableStateOf(false) } // Mode sombre
     var areNotificationsEnabled by remember { mutableStateOf(true) } // Notifications activées
+
+    val sharedPrefsManager = SharedPrefsManager(context)
 
     if (showLanguageDialog) {
         LanguageSelectionDialog(
@@ -94,13 +106,7 @@ fun ProfileView(
         // Main Settings Section
         Spacer(modifier = Modifier.height(16.dp))
         Divider(color = Color(0xFFE5E7EB), thickness = 1.dp)
-        Text(
-            text = TranslationManager.getTranslation("change_language"),
-            fontSize = 18.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = Color(0xFF1E40AF),
-            modifier = Modifier.padding(16.dp)
-        )
+
         SettingsItem(
             title = TranslationManager.getTranslation("privacy_policy"),
             icon = Icons.Default.PrivacyTip,
@@ -120,7 +126,10 @@ fun ProfileView(
             title = TranslationManager.getTranslation("logout"),
             icon = Icons.Default.ExitToApp,
             isDestructive = true,
-            onClick = { navigateToLogin() }
+            onClick = { 
+                sharedPrefsManager.clearToken()
+                navigateToLogin()
+            }
         )
 
         // New Settings Section
@@ -129,7 +138,7 @@ fun ProfileView(
 
         // Dark Mode Toggle
         SwitchSettingItem(
-            title = "Enable Dark Mode",
+            title = TranslationManager.getTranslation("dark_mode"),
             icon = Icons.Default.DarkMode,
             isChecked = isDarkModeEnabled,
             onCheckedChange = { isDarkModeEnabled = it }
@@ -137,7 +146,7 @@ fun ProfileView(
 
         // Notifications Toggle
         SwitchSettingItem(
-            title = "Enable Notifications",
+            title = TranslationManager.getTranslation("notifications"),
             icon = Icons.Default.Notifications,
             isChecked = areNotificationsEnabled,
             onCheckedChange = { areNotificationsEnabled = it }
@@ -145,21 +154,21 @@ fun ProfileView(
 
         // Linked Accounts
         SettingsItem(
-            title = "Manage Linked Accounts",
+            title = TranslationManager.getTranslation("linked_accounts"),
             icon = Icons.Default.AccountCircle,
             onClick = { /* Navigate to Linked Accounts Screen */ }
         )
 
         // Security Settings
         SettingsItem(
-            title = "Security & Privacy",
+            title = TranslationManager.getTranslation("security"),
             icon = Icons.Default.Security,
             onClick = { /* Navigate to Security Settings Screen */ }
         )
 
         // Help & Support
         SettingsItem(
-            title = "Help & Support",
+            title = TranslationManager.getTranslation("help_support"),
             icon = Icons.Default.Help,
             onClick = { /* Navigate to Help & Support Screen */ }
         )
@@ -167,7 +176,7 @@ fun ProfileView(
         // App Version Section
         Spacer(modifier = Modifier.height(32.dp))
         Text(
-            text = "App ver 2.0.1",
+            text = "${TranslationManager.getTranslation("app_version")} 2.0.1",
             fontSize = 12.sp,
             color = Color(0xFF9E9E9E),
             modifier = Modifier.align(Alignment.CenterHorizontally)
@@ -253,55 +262,125 @@ fun LanguageSelectionDialog(
 ) {
     AlertDialog(
         onDismissRequest = { onDismiss() },
+        properties = DialogProperties(dismissOnClickOutside = true),
+        containerColor = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(28.dp),
+        modifier = Modifier.fillMaxWidth(0.92f),
         title = {
-            Text(
-                text = TranslationManager.getTranslation("change_language"),
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
-            )
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Language,
+                    contentDescription = null,
+                    modifier = Modifier.size(36.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = TranslationManager.getTranslation("change_language"),
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
+                )
+            }
         },
         text = {
-            Column {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp)
+            ) {
                 LanguageOption(
-                    language = "en",
-                    label = "English",
+                    languageCode = "en",
+                    languageName = "English",
+                    flag = "🇺🇸",
                     isSelected = currentLanguage == "en",
                     onSelect = { onLanguageSelected("en") }
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 LanguageOption(
-                    language = "fr",
-                    label = "Français",
+                    languageCode = "fr",
+                    languageName = "Français",
+                    flag = "🇫🇷",
                     isSelected = currentLanguage == "fr",
                     onSelect = { onLanguageSelected("fr") }
                 )
             }
         },
         confirmButton = {
-            TextButton(onClick = { onDismiss() }) {
-                Text(text = "Close")
+            TextButton(
+                onClick = { onDismiss() },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .height(48.dp),
+                shape = RoundedCornerShape(24.dp),
+                colors = ButtonDefaults.textButtonColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            ) {
+                Text(
+                    text = TranslationManager.getTranslation("close"),
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium
+                )
             }
         }
     )
 }
 
 @Composable
-fun LanguageOption(language: String, label: String, isSelected: Boolean, onSelect: () -> Unit) {
-    Row(
+fun LanguageOption(
+    languageCode: String,
+    languageName: String,
+    flag: String,
+    isSelected: Boolean,
+    onSelect: () -> Unit
+) {
+    val backgroundColor = animateColorAsState(
+        targetValue = if (isSelected) 
+            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+        else MaterialTheme.colorScheme.surface,
+        label = "backgroundColor"
+    )
+
+    Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onSelect() }
-            .padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .clickable { onSelect() },
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = if (isSelected) 4.dp else 0.dp
+        )
     ) {
-        RadioButton(
-            selected = isSelected,
-            onClick = { onSelect() }
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(
-            text = label,
-            fontSize = 16.sp
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(backgroundColor.value)
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = flag,
+                fontSize = 24.sp,
+                modifier = Modifier.padding(end = 12.dp)
+            )
+            Text(
+                text = languageName,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.weight(1f)
+            )
+            RadioButton(
+                selected = isSelected,
+                onClick = { onSelect() },
+                colors = RadioButtonDefaults.colors(
+                    selectedColor = MaterialTheme.colorScheme.primary
+                )
+            )
+        }
     }
 }
