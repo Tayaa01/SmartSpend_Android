@@ -152,7 +152,12 @@ fun AddTransactionScreen(
         val currentDate = getCurrentDate()
         if (isExpense) {
             if (isFormValid) {
-                val expense = Expense("0",amount.toDouble(), description, currentDate, category!!._id)
+                val expense = Expense(
+                    amount = amount.toDouble(), 
+                    description = description, 
+                    date = currentDate, 
+                    category = category!!._id
+                )
                 addExpense(token, expense) { success ->
                     if (success) {
                         navController.navigate("home") {
@@ -286,9 +291,18 @@ fun AddTransactionScreen(
                     },
                     shape = RoundedCornerShape(5.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = SecondaryColor),
-                    modifier = Modifier.weight(1f).padding(end = 8.dp)
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(56.dp)  // Increased height
+                        .padding(end = 8.dp)
                 ) {
-                    Text(text = TranslationManager.getTranslation("take_photo"), color = Color.White)
+                    Text(
+                        text = TranslationManager.getTranslation("take_photo"),
+                        color = Color.White,
+                        maxLines = 2,  // Allow 2 lines
+                        softWrap = true,  // Enable wrapping
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    )
                 }
 
                 Button(
@@ -301,9 +315,18 @@ fun AddTransactionScreen(
                     },
                     shape = RoundedCornerShape(5.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = SecondaryColor),
-                    modifier = Modifier.weight(1f).padding(start = 8.dp)
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(56.dp)  // Increased height
+                        .padding(start = 8.dp)
                 ) {
-                    Text(text = TranslationManager.getTranslation("upload_photo"), color = Color.White)
+                    Text(
+                        text = TranslationManager.getTranslation("upload_photo"),
+                        color = Color.White,
+                        maxLines = 2,  // Allow 2 lines
+                        softWrap = true,  // Enable wrapping
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    )
                 }
             }
         }

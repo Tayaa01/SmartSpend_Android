@@ -46,7 +46,7 @@ data class BillDetail(
 )
 
 data class Expense(
-    val _id: String,
+    val _id: String? = null,
     val amount: Double,
     val description: String,
     val date: String,
