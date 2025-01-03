@@ -527,7 +527,7 @@ fun IncomeBarChartViewWithCategories() {
         }
     }
 }
-//
+
 @Composable
 fun BarChart(data: List<CategoryAmount>, modifier: Modifier = Modifier) {
     val maxAmount = data.maxOfOrNull { it.totalAmount } ?: 1f
@@ -600,6 +600,8 @@ data class CategoryAmount(
     val totalAmount: Double
 )
 
+//
+//
 fun getLastWeekDates(): List<String> {
     val calendar = Calendar.getInstance()
     val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
@@ -667,26 +669,22 @@ fun IncomeExpenseLineChart(
         drawLineChart(incomeData, Color.Green)
         drawLineChart(expenseData, Color.Red)
 
-        // Draw labels
+        // Draw labels with exact dates
+        val paint = android.graphics.Paint().apply {
+            textSize = 32f
+            color = android.graphics.Color.BLACK
+            textAlign = android.graphics.Paint.Align.CENTER
+        }
         for (i in dates.indices) {
             val x = i * horizontalStep
-            val label = dates[i].substring(5) // Show MM-DD
-            drawContext.canvas.nativeCanvas.drawText(
-                label,
-                x,
-                chartHeight + 20f,
-                android.graphics.Paint().apply {
-                    textSize = 32f
-                    color = android.graphics.Color.BLACK
-                    textAlign = android.graphics.Paint.Align.CENTER
-                }
-            )
+            val y = chartHeight + 40f // Position below the x-axis
+            val label = dates[i] // Full date in yyyy-MM-dd format
+            drawContext.canvas.nativeCanvas.drawText(label, x, y, paint)
         }
     }
 }
 
 fun extractDateOnly(timestamp: String): String {
-    // Parse and format the timestamp to extract only the date (yyyy-MM-dd)
     val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
     val outputFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
     return try {
