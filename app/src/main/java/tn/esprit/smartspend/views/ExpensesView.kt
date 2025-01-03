@@ -30,8 +30,9 @@ import androidx.compose.ui.unit.sp
 import tn.esprit.smartspend.R
 import tn.esprit.smartspend.model.Category
 import tn.esprit.smartspend.model.Expense
+import tn.esprit.smartspend.ui.theme.CustomRed
 import tn.esprit.smartspend.ui.theme.Navy
-import tn.esprit.smartspend.ui.theme.Red
+
 import tn.esprit.smartspend.utils.TranslationManager
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -164,7 +165,7 @@ fun ExpenseListItem(expense: Expense, categories: List<Category>, onClick: () ->
                     text = "-$${expense.amount}",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Red
+                    color = CustomRed
                 )
             }
 

@@ -82,4 +82,17 @@ data class TokenVerificationResponse(
     val isValid: Boolean
 )
 
+data class RecommendationSuggestion(
+    val category: String,
+    val advice: String
+)
+
+data class RecommendationResponse(
+    val suggestions: List<RecommendationSuggestion>,
+    val user: String,
+    val date: String,
+    val _id: String,
+    val __v: Int
+)
+
 

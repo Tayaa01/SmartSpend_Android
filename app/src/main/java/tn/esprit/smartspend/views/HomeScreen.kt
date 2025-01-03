@@ -377,7 +377,7 @@ fun SpendingProgressBar(
 ) {
     val progress = if (totalIncome > 0) (totalExpenses / totalIncome).toFloat() else 1f
     val cappedProgress = progress.coerceAtMost(1f)
-    val mainProgressColor = if (progress > 1f) listOf(Red.copy(alpha = 0.2f), Red) else listOf(Teal, MostImportantColor)
+    val mainProgressColor = if (progress > 1f) listOf(CustomRed.copy(alpha = 0.2f), CustomRed) else listOf(Teal, MostImportantColor)
 
     val gradient = Brush.horizontalGradient(colors = mainProgressColor)
 
@@ -438,14 +438,14 @@ fun SpendingProgressBar(
                 text = "${TranslationManager.getTranslation("spent")}: ${String.format("%.1f", progress * 100)}%",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = if (progress > 1f) Red else Teal
+                color = if (progress > 1f) CustomRed else Teal
             )
             if (progress > 1f) {
                 Text(
                     text = TranslationManager.getTranslation("exceeding_income"),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Red
+                    color = CustomRed
                 )
             }
         }
@@ -497,7 +497,7 @@ fun getProgressColor(progress: Float): List<Color> {
     return when {
         progress < 0.33f -> listOf(Color(0xFF00FF00), Color(0xFF00FF00).copy(alpha = 0.2f)) // Brighter green
         progress < 0.66f -> listOf(Color(0xFFFFA500), Color(0xFFFFA500).copy(alpha = 0.2f)) // Brighter orange
-        else -> listOf(Red, Red.copy(alpha = 0.2f))
+        else -> listOf(CustomRed, CustomRed.copy(alpha = 0.2f))
     }
 }
 

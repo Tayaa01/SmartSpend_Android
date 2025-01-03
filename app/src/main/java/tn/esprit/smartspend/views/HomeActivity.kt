@@ -9,6 +9,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Menu
@@ -96,6 +97,7 @@ fun BottomNavigationBar(navController: NavHostController) {
     val items = listOf(
         BottomNavItem.Home,
         BottomNavItem.Analytics,
+        BottomNavItem.Recommendations,
         BottomNavItem.Profile
     )
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -227,6 +229,10 @@ fun NavigationGraph(
                 context.startActivity(Intent(context, MainActivity::class.java))
             }
         }
+        
+        composable(BottomNavItem.Recommendations.route) {
+            RecommendationsView()
+        }
     }
 }
 
@@ -265,7 +271,8 @@ suspend fun fetchExpenses(token: String?): List<Expense> {
 data class BottomNavItem(val route: String, val icon: androidx.compose.ui.graphics.vector.ImageVector, val title: String) {
     companion object {
         val Home = BottomNavItem("home", Icons.Default.Home, "Home")
-        val Analytics = BottomNavItem("analytics", Icons.Default.Menu, "Analytics")
+        val Analytics = BottomNavItem("analytics", Icons.Default.Assessment, "Analytics")
+        val Recommendations = BottomNavItem("recommendations", Icons.Default.Menu, "Tips")
         val Profile = BottomNavItem("profile", Icons.Default.Person, "Profile")
     }
 }
