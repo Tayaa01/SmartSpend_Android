@@ -82,6 +82,10 @@ dependencies {
     implementation(libs.androidx.ui.test.android)
     implementation(libs.androidx.ui.test.android)
     implementation(libs.androidx.ui.test.android)
+    // implementation("com.anychart:charts-android:1.2.4")
+
+    // Ensure MPAndroidChart is present
+    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
 
     // Test dependencies
     testImplementation(libs.junit)
@@ -105,9 +109,9 @@ dependencies {
     implementation ("androidx.compose.material3:material3:1.2.0-alpha02")
 
     // Material Icons
-    implementation ("androidx.compose.material:material-icons-extended:1.5.1")
+    implementation ("androidx.compose.material:material-icons-extended:1.7.6")
     implementation ("androidx.compose.material3:material3:1.2.0-alpha02")
-    implementation ("androidx.compose.ui:ui:1.5.1")
+    implementation ("androidx.compose.ui:ui:1.7.6")
 
     implementation ("androidx.compose.ui:ui-tooling-preview:1.5.1")
 
