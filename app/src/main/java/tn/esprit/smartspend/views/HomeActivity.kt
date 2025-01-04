@@ -1,5 +1,6 @@
 package tn.esprit.smartspend
 
+import AnalyticsView
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
@@ -24,7 +25,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.example.smartspend.ui.statistics.AnalyticsView
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -165,8 +165,9 @@ fun NavigationGraph(
 
         composable(BottomNavItem.Analytics.route) {
             AnalyticsView(
-                fetchExpenses = { expenses },
-                fetchIncomes = { incomes }
+                fetchExpenses = expenses ,
+                fetchIncomes = incomes,
+                fetchCategories = categories
             )
         }
         composable(BottomNavItem.Profile.route) {

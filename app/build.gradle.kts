@@ -86,6 +86,12 @@ dependencies {
 
     // Ensure MPAndroidChart is present
     implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
+    implementation(libs.androidx.foundation.layout.android)
+    implementation(libs.androidx.foundation.layout.android)
+    implementation(libs.androidx.foundation.layout.android)
+    implementation(libs.androidx.foundation.layout.android)
+    implementation(libs.androidx.foundation.android)
+    implementation(libs.androidx.foundation.layout.android)
 
     // Test dependencies
     testImplementation(libs.junit)
@@ -114,5 +120,7 @@ dependencies {
     implementation ("androidx.compose.ui:ui:1.7.6")
 
     implementation ("androidx.compose.ui:ui-tooling-preview:1.5.1")
+
+
 
 }
