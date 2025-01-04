@@ -1,6 +1,5 @@
 package tn.esprit.smartspend
 
-import AnalyticsView
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
@@ -25,6 +24,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.smartspend.ui.statistics.AnalyticsView
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -66,10 +66,14 @@ fun MainScreen(context: Context) {
 
     var categories by remember { mutableStateOf<List<Category>>(emptyList()) }
     var expenses by remember { mutableStateOf<List<Expense>>(emptyList()) }
+    var incomes by remember { mutableStateOf<List<Income>>(emptyList()) }
+
+
 
     LaunchedEffect(Unit) {
         categories = fetchCategories()
         expenses = fetchExpenses(token)
+        incomes = fetchIncomes(token)
     }
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -87,7 +91,8 @@ fun MainScreen(context: Context) {
             modifier = Modifier.padding(innerPadding),
             token = token,
             categories = categories,
-            expenses = expenses
+            expenses = expenses,
+            incomes = incomes
         )
     }
 }
@@ -134,7 +139,8 @@ fun NavigationGraph(
     modifier: Modifier = Modifier,
     token: String?,
     categories: List<Category>,
-    expenses: List<Expense>
+    expenses: List<Expense>,
+    incomes: List<Income>
 ) {
     NavHost(navController, startDestination = BottomNavItem.Home.route, modifier = modifier) {
         composable(BottomNavItem.Home.route) {
@@ -157,7 +163,12 @@ fun NavigationGraph(
             )
         }
 
-        composable(BottomNavItem.Analytics.route) { AnalyticsView() }
+        composable(BottomNavItem.Analytics.route) {
+            AnalyticsView(
+                fetchExpenses = { expenses },
+                fetchIncomes = { incomes }
+            )
+        }
         composable(BottomNavItem.Profile.route) {
             val context = LocalContext.current
             ProfileView(
@@ -263,6 +274,22 @@ suspend fun fetchExpenses(token: String?): List<Expense> {
             }
         } catch (e: Exception) {
             Log.e("HomeScreen", "Error fetching expenses: ${e.message}")
+            emptyList()
+        }
+    }
+}
+
+suspend fun fetchIncomes(token: String?): List<Income> {
+    return withContext(Dispatchers.IO) {
+        try {
+            val response = RetrofitInstance.api.getIncomes(token.toString()).execute()
+            if (response.isSuccessful) {
+                response.body() ?: emptyList()
+            } else {
+                emptyList()
+            }
+        } catch (e: Exception) {
+            Log.e("HomeScreen", "Error fetching incomes: ${e.message}")
             emptyList()
         }
     }
