@@ -32,12 +32,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 
+val DarkRed = Color(0xFFB71B1B)  // Darker shade of red
+val DarkGreen = Color(0xFF10A110) // Darker shade of green
+
 @Composable
 fun AnalyticsView(
     fetchExpenses: List<Expense>,
     fetchIncomes: List<Income>,
     fetchCategories: List<Category>
-    ) {
+) {
 
     var totalExpensesAmount by remember { mutableStateOf(0.0) }
     var totalIncomesAmount by remember { mutableStateOf(0.0) }
@@ -47,8 +50,6 @@ fun AnalyticsView(
     var isLoadingCategories by remember { mutableStateOf(true) }
     var expenses by remember { mutableStateOf<List<Expense>>(emptyList()) }
     var incomes by remember { mutableStateOf<List<Income>>(emptyList()) }
-
-
 
     // Simulate data fetching on UI load
     LaunchedEffect(Unit) {
@@ -71,8 +72,7 @@ fun AnalyticsView(
     ) {
         if (expenses.isEmpty() || incomes.isEmpty()) {
             CircularProgressIndicator(Modifier.padding(16.dp))
-        }
-        else {
+        } else {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -83,9 +83,9 @@ fun AnalyticsView(
                 StatSection(
                     title = "Summary",
                     stats = listOf(
-                        StatData("Total Expenses", totalExpensesAmount, Color.Red, "arrow.down.circle.fill"),
-                        StatData("Total Incomes", totalIncomesAmount, Color.Green, "arrow.up.circle.fill"),
-                        StatData("Net Balance", netBalanceAmount, if (netBalanceAmount < 0) Color.Red else Color.Green, "equal.circle.fill")
+                        StatData("Total Expenses", totalExpensesAmount, DarkRed, "arrow.down.circle.fill"),
+                        StatData("Total Incomes", totalIncomesAmount, DarkGreen, "arrow.up.circle.fill"),
+                        StatData("Net Balance", netBalanceAmount, if (netBalanceAmount < 0) DarkRed else DarkGreen, "equal.circle.fill")
                     ),
                     currency = selectedCurrency
                 )
@@ -145,8 +145,10 @@ fun ProgressBarSection(totalExpensesAmount: Double, totalIncomesAmount: Double, 
         Text("Expenses vs Incomes", style = MaterialTheme.typography.h6)
         LinearProgressIndicator(
             progress = (totalExpensesAmount / totalIncomesAmount).toFloat(),
-            modifier = Modifier.fillMaxWidth().height(10.dp),
-            color = Color.Red
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(10.dp),
+            color = DarkRed
         )
         Text("$currency $totalExpensesAmount / $currency $totalIncomesAmount")
     }
@@ -166,8 +168,8 @@ fun DetailedInsightsSection(
             horizontalArrangement = Arrangement.SpaceEvenly,
             modifier = Modifier.fillMaxWidth()
         ) {
-            ProgressCard("Average Expenses", totalExpensesAmount / maxOf(1, expensesViewModel.size), totalExpensesAmount, Color.Red, currency)
-            ProgressCard("Average Income", totalIncomesAmount / maxOf(1, incomesViewModel.size), totalIncomesAmount, Color.Green, currency)
+            ProgressCard("Average Expenses", totalExpensesAmount / maxOf(1, expensesViewModel.size), totalExpensesAmount, DarkRed, currency)
+            ProgressCard("Average Income", totalIncomesAmount / maxOf(1, incomesViewModel.size), totalIncomesAmount, DarkGreen, currency)
         }
     }
 }
@@ -227,7 +229,6 @@ fun CircleProgressBar(
     }
 }
 
-
 @Composable
 fun AdditionalStatisticsSection(
     expensesViewModel: List<Expense>,
@@ -240,8 +241,8 @@ fun AdditionalStatisticsSection(
             horizontalArrangement = Arrangement.SpaceEvenly,
             modifier = Modifier.fillMaxWidth()
         ) {
-            ProgressCard("Highest Expense", expensesViewModel.maxOfOrNull { it.amount } ?: 0.0, expensesViewModel.sumOf { it.amount }, Color.Red, currency)
-            ProgressCard("Highest Income", incomesViewModel.maxOfOrNull { it.amount } ?: 0.0, incomesViewModel.sumOf { it.amount }, Color.Green, currency)
+            ProgressCard("Highest Expense", expensesViewModel.maxOfOrNull { it.amount } ?: 0.0, expensesViewModel.sumOf { it.amount }, DarkRed, currency)
+            ProgressCard("Highest Income", incomesViewModel.maxOfOrNull { it.amount } ?: 0.0, incomesViewModel.sumOf { it.amount }, DarkGreen, currency)
         }
     }
 }
@@ -256,7 +257,6 @@ fun ChartsAndGraphsSection(expensesViewModel: List<Expense>, categories: List<Ca
         BarChartView(groupedExpenses)
     }
 }
-
 
 @Composable
 fun PieChartView(groupedExpenses: List<Pair<String, Double>>) {
@@ -275,12 +275,14 @@ fun PieChartView(groupedExpenses: List<Pair<String, Double>>) {
                 // Prepare the data
                 val entries = groupedExpenses.map { PieEntry(it.second.toFloat(), it.first) }
                 val dataSet = PieDataSet(entries, "Expenses by Category")
-                dataSet.colors = listOf(Color.Red.toArgb(), Color.Green.toArgb(), Color.Blue.toArgb(), Color.Yellow.toArgb())
+                dataSet.colors = listOf(DarkRed.toArgb(), DarkGreen.toArgb(), Color.Blue.toArgb(), Color.Yellow.toArgb())
                 val pieData = PieData(dataSet)
                 data = pieData
             }
         },
-        modifier = Modifier.fillMaxWidth().height(300.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(300.dp)
     )
 }
 
@@ -302,7 +304,7 @@ fun BarChartView(groupedExpenses: List<Pair<String, Double>>) {
                     BarEntry(index.toFloat(), pair.second.toFloat())
                 }
                 val dataSet = BarDataSet(entries, "Expense by Category")
-                dataSet.colors = listOf(Color.Red.toArgb(), Color.Green.toArgb(), Color.Blue.toArgb(), Color.Yellow.toArgb())
+                dataSet.colors = listOf(DarkRed.toArgb(), DarkGreen.toArgb(), Color.Blue.toArgb(), Color.Yellow.toArgb())
                 val barData = BarData(dataSet)
                 data = barData
 
@@ -311,10 +313,11 @@ fun BarChartView(groupedExpenses: List<Pair<String, Double>>) {
                 legend.textColor = Color.Black.toArgb()
             }
         },
-        modifier = Modifier.fillMaxWidth().height(300.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(300.dp)
     )
 }
-
 
 fun groupExpensesByCategory(expensesViewModel: List<Expense>, categories: List<Category>): List<Pair<String, Double>> {
     return expensesViewModel
@@ -322,6 +325,5 @@ fun groupExpensesByCategory(expensesViewModel: List<Expense>, categories: List<C
         .map { it.key to it.value.sumOf { expense -> expense.amount } }
         .sortedByDescending { it.second }
 }
-
 
 data class StatData(val title: String, val value: Double, val color: Color, val icon: String)
