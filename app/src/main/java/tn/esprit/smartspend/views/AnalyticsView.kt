@@ -32,8 +32,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 
-val DarkRed = Color(0xFFB71B1B)  // Darker shade of red
-val DarkGreen = Color(0xFF10A110) // Darker shade of green
+val DarkRed = Color(0xFFE01B1B)  // Darker shade of red
+val DarkGreen = Color(0xFF10C010) // Darker shade of green
 
 @Composable
 fun AnalyticsView(
@@ -140,19 +140,71 @@ fun StatCard(stat: StatData, currency: String) {
 }
 
 @Composable
-fun ProgressBarSection(totalExpensesAmount: Double, totalIncomesAmount: Double, currency: String) {
-    Column(modifier = Modifier.padding(vertical = 16.dp)) {
-        Text("Expenses vs Incomes", style = MaterialTheme.typography.h6)
-        LinearProgressIndicator(
-            progress = (totalExpensesAmount / totalIncomesAmount).toFloat(),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(10.dp),
-            color = DarkRed
+fun ProgressBarSection(
+    totalExpensesAmount: Double,
+    totalIncomesAmount: Double,
+    currency: String
+) {
+    Column(
+        modifier = Modifier
+            .padding(vertical = 16.dp)
+            .fillMaxWidth()
+    ) {
+        Text(
+            text = "Expenses vs Incomes",
+            style = MaterialTheme.typography.h6,
+            color = MaterialTheme.colors.primary,
+            modifier = Modifier.padding(start = 16.dp)
         )
-        Text("$currency $totalExpensesAmount / $currency $totalIncomesAmount")
+
+        Box(
+            modifier = Modifier
+                .padding(horizontal = 16.dp)
+                .fillMaxWidth()
+                //.background(Color.White, RoundedCornerShape(15.dp))
+                //.shadow(5.dp, RoundedCornerShape(15.dp))
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(15.dp)
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "Expenses",
+                        style = MaterialTheme.typography.subtitle2,
+                        color = Color.Red
+                    )
+                    Text(
+                        text = "$currency ${"%.2f".format(totalExpensesAmount)}",
+                        style = MaterialTheme.typography.subtitle2,
+                        color = Color.Red,
+                        //fontWeight = FontWeight.Bold
+                    )
+                }
+
+                LinearProgressIndicator(
+                    progress = if (totalIncomesAmount > 0) (totalExpensesAmount / totalIncomesAmount).toFloat() else 0f,
+                    color = Color.Red,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(10.dp)
+                        //.clip(RoundedCornerShape(5.dp))
+                )
+
+                Text(
+                    text = "${if (totalIncomesAmount > 0) (totalExpensesAmount / totalIncomesAmount * 100).toInt() else 0}% of Income Spent",
+                    style = MaterialTheme.typography.caption,
+                    color = MaterialTheme.colors.primary
+                )
+            }
+        }
     }
 }
+
+
 
 @Composable
 fun DetailedInsightsSection(
