@@ -69,14 +69,15 @@ fun AnalyticsView(
         topBar = {
             TopAppBar(title = { Text("Statistics") })
         }
-    ) {
+    ) { paddingValues -> // Use paddingValues here
         if (expenses.isEmpty() || incomes.isEmpty()) {
             CircularProgressIndicator(Modifier.padding(16.dp))
         } else {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(16.dp)
+                    .padding(paddingValues) // Apply padding here
+                    .padding(16.dp) // Additional padding if needed
                     .verticalScroll(rememberScrollState())
             ) {
                 // Summary Section
@@ -104,6 +105,7 @@ fun AnalyticsView(
             }
         }
     }
+
 }
 
 @Composable
