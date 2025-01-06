@@ -1,33 +1,44 @@
 package tn.esprit.smartspend.views
 
 import android.content.Context
+import androidx.compose.ui.graphics.Brush
+
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.DialogProperties
 import tn.esprit.smartspend.utils.SharedPrefsManager
 import tn.esprit.smartspend.utils.TranslationManager
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.RadioButtonDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.material3.Card
-import androidx.compose.ui.window.DialogProperties
+import tn.esprit.smartspend.R // Assurez-vous que le fichier `R.drawable.icon4` est dans `res/drawable`
+
+
+
+import kotlinx.coroutines.launch
+
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.Response
+import org.json.JSONObject
+
+
 
 @Composable
 fun ProfileView(
@@ -35,12 +46,9 @@ fun ProfileView(
     navigateToLogin: () -> Unit,
     navigateToPrivacyPolicy: () -> Unit
 ) {
-    // Charger la langue depuis les préférences
     TranslationManager.loadLanguagePreference(context)
     var showLanguageDialog by remember { mutableStateOf(false) }
     var selectedLanguage by remember { mutableStateOf(TranslationManager.getTranslation("language")) }
-    var isDarkModeEnabled by remember { mutableStateOf(false) } // Mode sombre
-    var areNotificationsEnabled by remember { mutableStateOf(true) } // Notifications activées
 
     val sharedPrefsManager = SharedPrefsManager(context)
 
@@ -56,133 +64,86 @@ fun ProfileView(
         )
     }
 
+    var username by remember { mutableStateOf<String?>(null) }
+    val coroutineScope = rememberCoroutineScope()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(Color(0xFFF5F5F5)) // Couleur d'arrière-plan moderne et neutre
     ) {
-        // Title Section
-        Spacer(modifier = Modifier.height(16.dp))
-        Row(
+        // Titre "Settings" ajouté en haut de la page
+        Text(
+            text = TranslationManager.getTranslation("settings"),
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color.Black,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+                .align(Alignment.Start) // Aligne le titre à gauche
+        )
+
+        // Carte pour les paramètres
+        Card(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+            shape = RoundedCornerShape(12.dp), // Coins plus arrondis
+            colors = CardDefaults.cardColors(containerColor = Color.White),
         ) {
-            Box(
-                modifier = Modifier
-                    .size(80.dp)
-                    .clip(CircleShape)
-                    .background(
-                        Brush.linearGradient(
-                            colors = listOf(Color(0xFF4CAF50), Color(0xFF81C784))
-                        )
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = "Profile Image",
-                    tint = Color.White,
-                    modifier = Modifier.size(50.dp)
-                )
-            }
-            Spacer(modifier = Modifier.width(16.dp))
             Column {
-                Text(
-                    text = "Kapil Mohan",
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF1E293B)
+                SettingsItem(
+                    title = TranslationManager.getTranslation("privacy_policy"),
+                    icon = Icons.Default.PrivacyTip,
+                    onClick = { navigateToPrivacyPolicy() }
                 )
-                Text(
-                    text = TranslationManager.getTranslation("profile_title"),
-                    fontSize = 14.sp,
-                    color = Color(0xFF6B7280)
+
+                Divider(color = Color(0xFFE0E0E0), thickness = 1.dp)
+
+                SettingsItem(
+                    title = TranslationManager.getTranslation("language"),
+                    icon = Icons.Default.Language,
+                    onClick = { showLanguageDialog = true }
+                )
+
+                Divider(color = Color(0xFFE0E0E0), thickness = 1.dp)
+
+                SettingsItem(
+                    title = TranslationManager.getTranslation("logout"),
+                    icon = Icons.Default.ExitToApp,
+                    isDestructive = true,
+                    onClick = {
+                        sharedPrefsManager.clearToken()
+                        navigateToLogin()
+                    }
                 )
             }
         }
 
-        // Main Settings Section
-        Spacer(modifier = Modifier.height(16.dp))
-        Divider(color = Color(0xFFE5E7EB), thickness = 1.dp)
+        Spacer(modifier = Modifier.height(12.dp))
 
-        SettingsItem(
-            title = TranslationManager.getTranslation("privacy_policy"),
-            icon = Icons.Default.PrivacyTip,
-            onClick = { navigateToPrivacyPolicy() }
-        )
-
-        // Other Settings Section
-        Spacer(modifier = Modifier.height(16.dp))
-        Divider(color = Color(0xFFE5E7EB), thickness = 1.dp)
-        SettingsItem(
-            title = TranslationManager.getTranslation("language"),
-            icon = Icons.Default.Language,
-            onClick = { showLanguageDialog = true }
-        )
-        Divider(color = Color(0xFFE5E7EB), thickness = 1.dp)
-        SettingsItem(
-            title = TranslationManager.getTranslation("logout"),
-            icon = Icons.Default.ExitToApp,
-            isDestructive = true,
-            onClick = { 
-                sharedPrefsManager.clearToken()
-                navigateToLogin()
-            }
-        )
-
-        // New Settings Section
-        Spacer(modifier = Modifier.height(16.dp))
-        Divider(color = Color(0xFFE5E7EB), thickness = 1.dp)
-
-        // Dark Mode Toggle
-        SwitchSettingItem(
-            title = TranslationManager.getTranslation("dark_mode"),
-            icon = Icons.Default.DarkMode,
-            isChecked = isDarkModeEnabled,
-            onCheckedChange = { isDarkModeEnabled = it }
-        )
-
-        // Notifications Toggle
-        SwitchSettingItem(
-            title = TranslationManager.getTranslation("notifications"),
-            icon = Icons.Default.Notifications,
-            isChecked = areNotificationsEnabled,
-            onCheckedChange = { areNotificationsEnabled = it }
-        )
-
-        // Linked Accounts
-        SettingsItem(
-            title = TranslationManager.getTranslation("linked_accounts"),
-            icon = Icons.Default.AccountCircle,
-            onClick = { /* Navigate to Linked Accounts Screen */ }
-        )
-
-        // Security Settings
-        SettingsItem(
-            title = TranslationManager.getTranslation("security"),
-            icon = Icons.Default.Security,
-            onClick = { /* Navigate to Security Settings Screen */ }
-        )
-
-        // Help & Support
-        SettingsItem(
-            title = TranslationManager.getTranslation("help_support"),
-            icon = Icons.Default.Help,
-            onClick = { /* Navigate to Help & Support Screen */ }
-        )
-
-        // App Version Section
-        Spacer(modifier = Modifier.height(32.dp))
-        Text(
-            text = "${TranslationManager.getTranslation("app_version")} 2.0.1",
-            fontSize = 12.sp,
-            color = Color(0xFF9E9E9E),
-            modifier = Modifier.align(Alignment.CenterHorizontally)
-        )
+        // Pied de page
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "${TranslationManager.getTranslation("app_version")} 2.0.1",
+                fontSize = 14.sp,
+                color = Color(0xFF757575)
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = "© 2025 SmartSpend Inc.",
+                fontSize = 12.sp,
+                color = Color(0xFF757575)
+            )
+        }
     }
 }
+
+
 
 // Component for settings with toggle switches
 @Composable
@@ -312,22 +273,8 @@ fun LanguageSelectionDialog(
         confirmButton = {
             TextButton(
                 onClick = { onDismiss() },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .height(48.dp),
-                shape = RoundedCornerShape(24.dp),
-                colors = ButtonDefaults.textButtonColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            ) {
-                Text(
-                    text = TranslationManager.getTranslation("close"),
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium
-                )
-            }
+                content = { Text(TranslationManager.getTranslation("close")) }
+            )
         }
     )
 }
@@ -340,46 +287,23 @@ fun LanguageOption(
     isSelected: Boolean,
     onSelect: () -> Unit
 ) {
-    val backgroundColor = animateColorAsState(
-        targetValue = if (isSelected) 
-            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
-        else MaterialTheme.colorScheme.surface,
-        label = "backgroundColor"
-    )
-
-    Card(
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onSelect() },
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = if (isSelected) 4.dp else 0.dp
-        )
+            .clickable { onSelect() }
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(backgroundColor.value)
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = flag,
-                fontSize = 24.sp,
-                modifier = Modifier.padding(end = 12.dp)
-            )
-            Text(
-                text = languageName,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium,
-                modifier = Modifier.weight(1f)
-            )
-            RadioButton(
-                selected = isSelected,
-                onClick = { onSelect() },
-                colors = RadioButtonDefaults.colors(
-                    selectedColor = MaterialTheme.colorScheme.primary
-                )
+        Text(
+            text = "$flag $languageName",
+            fontSize = 16.sp,
+            modifier = Modifier.weight(1f)
+        )
+        if (isSelected) {
+            Icon(
+                imageVector = Icons.Default.CheckCircle,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary
             )
         }
     }

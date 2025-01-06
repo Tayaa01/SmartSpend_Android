@@ -94,5 +94,10 @@ data class RecommendationResponse(
     val _id: String,
     val __v: Int
 )
+data class UserResponse(
+    val username: String,
+    val email: String,
+    val other_field: String? // Le type `?` signifie que ce champ peut être nul
+)
 
 

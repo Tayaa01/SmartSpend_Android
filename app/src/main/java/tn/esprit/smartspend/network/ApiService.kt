@@ -72,7 +72,8 @@ interface ApiService {
         @Query("token") token: String,
         @Part file: MultipartBody.Part
     ): Call<ResponseBody>
-
+    @GET("auth/current-user")
+    fun getCurrentUser(@Query("token") token: String): Call<UserResponse>
     @GET("auth/verify-reset-token")
     fun verifyResetToken(@Query("token") token: String): Call<TokenVerificationResponse>
 }
